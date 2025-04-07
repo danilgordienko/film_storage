@@ -13,6 +13,7 @@ public class FilmStorageApplication {
 		System.setProperty("DB_PASSWORD", dotenv.get("DB_PASSWORD"));
 		System.setProperty("EXPR_TIME", dotenv.get("EXPR_TIME"));
 		System.setProperty("SECRET", dotenv.get("SECRET"));
+		System.setProperty("API_KEY", dotenv.get("API_KEY"));
 		SpringApplication.run(FilmStorageApplication.class, args);
 	}
 

@@ -18,5 +18,9 @@ public class Genre {
     private Long id;
 
     @Column(unique = true, nullable = false)
+    private Long tmdbId;
+
+    @Column(unique = true, nullable = false)
     private String name;
+
 }
