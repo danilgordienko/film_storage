@@ -62,18 +62,20 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
 
         } catch (ExpiredJwtException e) {
-            //log.error("JWT-токен просрочен: {}", e.getMessage());
+            System.err.println("JWT-токен просрочен: " + e.getMessage());
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "JWT-токен просрочен");
         } catch (UnsupportedJwtException | MalformedJwtException e) {
-            //log.error("Недействительный JWT-токен: {}", e.getMessage());
+            System.err.println("Недействительный JWT-токен: " + e.getMessage());
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Недействительный JWT-токен");
         } catch (JwtException e) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Недействительный JWT-токен");
+            System.err.println("Неверный JWT-токен: " + e.getMessage());
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Неверный JWT-токен");
         } catch (Exception e) {
-            //log.error("Ошибка аутентификации: {}", e.getMessage());
+            System.err.println("Ошибка аутентификации: " + e.getMessage());
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Ошибка аутентификации");
         }
     }
+
 
     /**
      * Извлекает JWT-токен из заголовка Authorization.

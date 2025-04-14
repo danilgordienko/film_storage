@@ -33,10 +33,7 @@ public class UserDetailsImpl implements UserDetails {
     //TODO сделать роли
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-//        return Arrays.stream("ADMIN".split(", "))
-//                .map(SimpleGrantedAuthority::new)
-//                .collect(Collectors.toList());
-        return Arrays.asList();
+        return List.of(new SimpleGrantedAuthority("ROLE_USER"));
     }
 
     @Override

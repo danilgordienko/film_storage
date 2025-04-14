@@ -24,23 +24,19 @@ public class JWTCore {
      * Генерирует JWT-токен для аутентифицированного пользователя
      */
     public String generateToken(Authentication auth) {
-        try{
-            UserDetailsImpl userDetails = (UserDetailsImpl) auth.getPrincipal();
-            return Jwts.builder()
-                    .setSubject(userDetails.getUsername()) // Устанавливаем имя пользователя в токен
-                    .setIssuedAt(new Date()) // Устанавливаем дату создания токена
-                    .setExpiration(new Date(new Date().getTime() + lifetime)) // Устанавливаем дату истечения
-                    .signWith(SignatureAlgorithm.HS256, secret) // Подписываем токен секретным ключом
-                    .compact();
-        } catch (Exception e) {
-            throw new RuntimeException("Ошибка при генерации JWT токена", e);
-        }
+        UserDetailsImpl userDetails = (UserDetailsImpl) auth.getPrincipal();
+        return Jwts.builder()
+                .setSubject(userDetails.getUsername()) // Устанавливаем имя пользователя в токен
+                .setIssuedAt(new Date()) // Устанавливаем дату создания токена
+                .setExpiration(new Date(new Date().getTime() + lifetime)) // Устанавливаем дату истечения
+                .signWith(SignatureAlgorithm.HS256, secret) // Подписываем токен секретным ключом
+                .compact();
     }
 
     /**
      * Извлекает имя пользователя из переданного JWT-токена
      */
-    public String getUsernameFromToken(String token) throws JwtException {
+    public String getUsernameFromToken(String token) {
         return Jwts.parser()
                 .setSigningKey(secret)
                 .parseClaimsJws(token)

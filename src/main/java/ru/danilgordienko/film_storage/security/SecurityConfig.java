@@ -16,6 +16,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.client.RestTemplate;
 import ru.danilgordienko.film_storage.service.UserService;
 
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
@@ -30,6 +31,11 @@ public class SecurityConfig {
     public SecurityConfig(JWTCore jwtCore, UserService userService) {
         this.jwtCore = jwtCore;
         this.userService = userService;
+    }
+
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
     }
 
     /**
@@ -48,6 +54,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/movies/**").hasRole("USER")
                         .requestMatchers("/api/auth/**").permitAll()
                         .anyRequest().authenticated()
                 )

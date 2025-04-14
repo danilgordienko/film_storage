@@ -75,8 +75,8 @@ public class TmdbClient {
                             return g;
                         }).toList();
                 genreResponse.setGenres(genres);
+                return genreResponse.getGenres();
             }
-            return genreResponse.getGenres();
         }catch (HttpClientErrorException | HttpServerErrorException e) {
             //log.error("TMDb API error: {}", e.getMessage());
         } catch (ResourceAccessException e) {

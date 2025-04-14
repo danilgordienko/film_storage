@@ -39,16 +39,18 @@ public class AuthController {
             authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword())
             );
+            // Устанавливаем аутентифицированного пользователя в SecurityContext
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            // Генерируем JWT-токен
+            String jwt = jwtCore.generateToken(authentication);
+            return ResponseEntity.ok(jwt);
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(401).body("Invalid username or password");
         } catch (UsernameNotFoundException e) {
             return ResponseEntity.status(404).body("User not found");
-    }
-            // Устанавливаем аутентифицированного пользователя в SecurityContext
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        // Генерируем JWT-токен
-        String jwt = jwtCore.generateToken(authentication);
-        return ResponseEntity.ok(jwt);
+        } catch (Exception e) {
+            return  ResponseEntity.status(500).body("Error generating token");
+        }
 
     }
 

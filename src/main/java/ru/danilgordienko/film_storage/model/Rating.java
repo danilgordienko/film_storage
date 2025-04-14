@@ -25,7 +25,7 @@ public class Rating {
     private User user;
 
     @ManyToOne(optional = false)
-    @JoinColumn(name = "movie_book_id")
+    @JoinColumn(name = "movie_id")
     private Movie movie;
 
     //@Min(1)

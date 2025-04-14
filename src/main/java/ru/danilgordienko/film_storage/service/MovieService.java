@@ -64,7 +64,7 @@ public class MovieService {
 
 
     // Преобразуем данные TMDb в модель Movie
-    private Movie convertToMovie(TmdbMovie tmdbMovie) {
+    public Movie convertToMovie(TmdbMovie tmdbMovie) {
         Movie movie = new Movie();
         movie.setTitle(tmdbMovie.getTitle());
         movie.setDescription(tmdbMovie.getOverview());
@@ -73,7 +73,7 @@ public class MovieService {
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
             Date releaseDate = dateFormat.parse(tmdbMovie.getReleaseDate());
             movie.setRelease_date(releaseDate);
-        } catch (ParseException e) {
+        } catch (ParseException | NullPointerException e) {
             movie.setRelease_date(null);
         }
 
