@@ -28,8 +28,6 @@ public class Rating {
     @JoinColumn(name = "movie_id")
     private Movie movie;
 
-    //@Min(1)
-    //@Max(5)
     private int rating;
 
     @Column(columnDefinition = "TEXT")
@@ -37,4 +35,9 @@ public class Rating {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+    }
 }
