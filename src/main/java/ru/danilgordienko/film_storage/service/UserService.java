@@ -9,6 +9,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import ru.danilgordienko.film_storage.DTO.UserRegistrationDTO;
 import ru.danilgordienko.film_storage.model.User;
 import ru.danilgordienko.film_storage.repository.UserRepository;
 import ru.danilgordienko.film_storage.security.UserDetailsImpl;
@@ -28,8 +29,12 @@ public class UserService implements UserDetailsService {
         return UserDetailsImpl.build(user) ;
     }
 
-    public void addUser(User user) {
-        userRepository.save(user);
+    public void addUser(UserRegistrationDTO user) {
+        User userToAdd = User.builder()
+                .username(user.getUsername())
+                .password(user.getPassword())
+                .build();
+        userRepository.save(userToAdd);
     }
 
     public Boolean existsUser(String username) {

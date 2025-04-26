@@ -1,6 +1,7 @@
 package ru.danilgordienko.film_storage.controller;
 
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -10,10 +11,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import ru.danilgordienko.film_storage.DTO.UserRegistrationDTO;
 import ru.danilgordienko.film_storage.model.User;
 import ru.danilgordienko.film_storage.security.JWTCore;
 import ru.danilgordienko.film_storage.service.UserService;
@@ -58,11 +61,16 @@ public class AuthController {
      * Регистрация нового пользователя
      */
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody User user) {
-        if (userService.existsUser(user.getUsername())) {
-            return ResponseEntity.status(409).body("User already exists");
-        }
+    public ResponseEntity<String> register(@RequestBody @Valid UserRegistrationDTO user, BindingResult result) {
         try {
+            //проверяем есть ли ошибки при вводе логина и пароля
+            if (result.hasErrors()) {
+                String errorMessage = result.getAllErrors().getFirst().getDefaultMessage();
+                return ResponseEntity.badRequest().body(errorMessage);
+            }
+            if (userService.existsUser(user.getUsername())) {
+                return ResponseEntity.status(409).body("User already exists");
+            }
             // Кодируем пароль перед сохранением
             user.setPassword(passwordEncoder.encode(user.getPassword()));
             userService.addUser(user);

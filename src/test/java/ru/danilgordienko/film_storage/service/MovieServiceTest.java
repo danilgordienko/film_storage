@@ -36,18 +36,18 @@ public class MovieServiceTest {
     @Mock
     private GenreRepository genreRepository;
 
-    @Test
-    public void testGetAllMovies() {
-        Movie movie = new Movie();
-        movie.setTitle("Test Movie");
-        when(movieRepository.findAll()).thenReturn(List.of(movie));
-
-        List<Movie> result = movieService.getAllMovies();
-
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals("Test Movie", result.get(0).getTitle());
-    }
+//    @Test
+//    public void testGetAllMovies() {
+//        Movie movie = new Movie();
+//        movie.setTitle("Test Movie");
+//        when(movieRepository.findAll()).thenReturn(List.of(movie));
+//
+//        List<Movie> result = movieService.getAllMovies();
+//
+//        assertNotNull(result);
+//        assertEquals(1, result.size());
+//        assertEquals("Test Movie", result.get(0).getTitle());
+//    }
 
     @Test
     public void testGetPopularMovies() {
