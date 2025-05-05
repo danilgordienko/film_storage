@@ -13,7 +13,7 @@ import java.util.Date;
 @Component
 public class JWTCore {
 
-    // Секретный ключ для подписи JWT, загружается
+    // Секретный ключ для подписи JWT
     @Value("${app.secret}")
     private String secret;
     // Время жизни токена

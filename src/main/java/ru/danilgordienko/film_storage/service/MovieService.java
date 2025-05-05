@@ -4,23 +4,16 @@ package ru.danilgordienko.film_storage.service;
 import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.context.SecurityContextHolder;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestBody;
 import ru.danilgordienko.film_storage.DTO.MovieDetailsDto;
 import ru.danilgordienko.film_storage.DTO.MovieListDto;
-import ru.danilgordienko.film_storage.DTO.RatingDto;
 import ru.danilgordienko.film_storage.DTO.mapping.MovieMapping;
 import ru.danilgordienko.film_storage.TmdbAPI.TmdbClient;
-import ru.danilgordienko.film_storage.model.Genre;
-import ru.danilgordienko.film_storage.model.Movie;
+import ru.danilgordienko.film_storage.model.*;
 import ru.danilgordienko.film_storage.TmdbAPI.TmdbMovie;
-import ru.danilgordienko.film_storage.model.Rating;
-import ru.danilgordienko.film_storage.model.User;
 import ru.danilgordienko.film_storage.repository.GenreRepository;
 import ru.danilgordienko.film_storage.repository.MovieRepository;
-import ru.danilgordienko.film_storage.repository.RatingRepository;
-import ru.danilgordienko.film_storage.repository.UserRepository;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -29,6 +22,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MovieService {
 
     private final TmdbClient tmdbClient;
@@ -36,59 +30,44 @@ public class MovieService {
     private final MovieRepository movieRepository;
     private final GenreRepository genreRepository;
     private final MovieMapping  movieMapping;
-    private final UserRepository userRepository;
-    private final RatingRepository ratingRepository;
 
 //    @PostConstruct
 //    public void init() {
 //        populateMovies();
 //    }
 
+    // Получение всех фильмов из базы данных
     public List<MovieListDto> getAllMovies(){
-        return movieRepository.findAll().stream().map(movieMapping::toMovieListDto).collect(Collectors.toList());
+        log.info("Получение всех фильмов из базы данных");
+        var movies = movieRepository.findAll().stream()
+                .map(movieMapping::toMovieListDto)
+                .collect(Collectors.toList());
+        log.info("Найдено {} фильмов", movies.size());
+        return movies;
     }
 
-    public Optional<MovieDetailsDto> getMovie(Long id){
-        return movieRepository.findById(id).map(movieMapping::toMovieDetailsDto);
+    // Получение фильма по ID
+    public Optional<MovieDetailsDto> getMovie(Long id) {
+        log.info("Получение фильма с ID = {}", id);
+        return movieRepository.findById(id)
+                .map(movie -> {
+                    log.info("Фильм найден: {}", movie.getTitle());
+                    return movieMapping.toMovieDetailsDto(movie);
+                });
     }
 
-    //добавляем рейтинг к фильму
-    public void addRating(Long id, RatingDto rating) {
-        //забираем username из текущей аунтификации
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new EntityNotFoundException("Пользователь не найден"));
-
-        Movie movie = movieRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Фильм не найден"));
-
-        if (rating.getRating() < 1 || rating.getRating() > 10) {
-            throw new IllegalArgumentException("Рейтинг должен быть от 1 до 10");
-        }
-
-        Rating rate = Rating.builder()
-                .movie(movie)
-                .user(user)
-                .rating(rating.getRating())
-                .comment(rating.getComment())
-                .build();
-
-        ratingRepository.save(rate);
-    }
-
-
-    //получение списка фильмов
+    //получение списка фильмов из внешнего api
     public List<Movie> getPopularMovies() {
-        // Загружаем фильмы
+        log.info("Загрузка популярных фильмов из внешнего API...");
         List<TmdbMovie> tmdbMovies = tmdbClient.getPopularMovies();
 
         if (tmdbMovies == null || tmdbMovies.isEmpty()) {
+            log.warn("Не удалось получить популярные фильмы или список пуст");
             return List.of();
         }
+        log.info("Получено {} фильмов с внешнего API", tmdbMovies.size());
 
-
-        //Получаем названия жанров по TmdbId
+        // Привязка жанров по ID
         tmdbMovies = tmdbMovies.stream().peek(movie -> {
             Set<Genre> genres = Optional.ofNullable(movie.getGenreIds())
                     .orElse(List.of()).stream()
@@ -99,11 +78,14 @@ public class MovieService {
             movie.setGenres(genres);
         }).toList();
 
-        //Преобразуем все фильмы в нужную модель
+        // Преобразование в модель Movie
         List<Movie> movies = new ArrayList<>();
-        for (var movie: tmdbMovies){
-            movies.add(convertToMovie(movie));
+        for (var tmdbMovie : tmdbMovies) {
+            var movie = convertToMovie(tmdbMovie);
+            movies.add(movie);
+            log.debug("Преобразован фильм: {}", movie.getTitle());
         }
+
         return movies;
     }
 
@@ -119,6 +101,7 @@ public class MovieService {
             Date releaseDate = dateFormat.parse(tmdbMovie.getReleaseDate());
             movie.setRelease_date(releaseDate);
         } catch (ParseException | NullPointerException e) {
+            log.warn("Ошибка парсинга даты фильма '{}': {}", tmdbMovie.getTitle(), tmdbMovie.getReleaseDate());
             movie.setRelease_date(null);
         }
 
@@ -128,10 +111,14 @@ public class MovieService {
 
     // Заполнение базы данных фильмами и жанрами
     public void populateMovies() {
+        log.info("Заполнение базы данных жанрами и популярными фильмами...");
         List<Genre> genres = tmdbClient.loadGenres();
         genreRepository.saveAll(genres);
+        log.info("Сохранено {} жанров", genres.size());
+
         List<Movie> movies = getPopularMovies();
         movieRepository.saveAll(movies);
+        log.info("Сохранено {} фильмов", movies.size());
     }
 
 }

@@ -25,9 +25,14 @@ public class Favorite {
     private User user;
 
     @ManyToOne(optional = false)
-    @JoinColumn(name = "movie_book_id")
+    @JoinColumn(name = "movie_id")
     private Movie movie;
 
     @Column(name = "added_at")
     private LocalDateTime addedAt = LocalDateTime.now();
+
+    @PrePersist
+    protected void onCreate() {
+        this.addedAt = LocalDateTime.now();
+    }
 }
