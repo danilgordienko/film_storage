@@ -1,0 +1,47 @@
+# Игнорировать файлы, специфичные для IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+*.swo
+
+# Игнорировать скомпилированные файлы
+/target/
+/target/**
+!/target/*.jar
+!/target/*.war
+/build/
+/out/
+/bin/
+
+# Игнорировать логи и временные файлы
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+
+# Игнорировать файлы зависимостей
+/.mvn/
+/mvnw
+/mvnw.cmd
+
+# Игнорировать файлы конфигурации
+/.DS_Store
+/.env
+/.env.local
+/.env.development
+/.env.production
+
+# Игнорировать тестовые отчеты и данные
+/test-output/
+/test-results/
+/coverage/
+/.nyc_output/
+
+/logs/
+
+
+
