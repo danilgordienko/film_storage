@@ -57,6 +57,7 @@ public class AuthControllerTest {
         mockMvc = MockMvcBuilders.standaloneSetup(authController).build();
         objectMapper = new ObjectMapper();
     }
+
     @Test
     void testLogin() throws Exception {
         User user = new User();
@@ -111,7 +112,7 @@ public class AuthControllerTest {
     void testRegisterWhenUserAlreadyExists() throws Exception {
         User user = new User();
         user.setUsername("test");
-        user.setPassword("test");
+        user.setPassword("test1234");
         String userJson = objectMapper.writeValueAsString(user);
 
         when(userService.existsUser("test")).thenReturn(true);
@@ -126,11 +127,11 @@ public class AuthControllerTest {
     void testRegister() throws Exception {
         User user = new User();
         user.setUsername("test");
-        user.setPassword("pass");
+        user.setPassword("pass1234");
         String userJson = objectMapper.writeValueAsString(user);
 
         when(userService.existsUser("test")).thenReturn(false);
-        when(passwordEncoder.encode("pass")).thenReturn("encoded-pass");
+        when(passwordEncoder.encode("pass1234")).thenReturn("encoded-pass");
 
 
         mockMvc.perform(post("/api/auth/register")
@@ -148,11 +149,11 @@ public class AuthControllerTest {
     void testRegisterWhenOtherExceptionThrown() throws Exception {
         User user = new User();
         user.setUsername("fail_user");
-        user.setPassword("pass");
+        user.setPassword("pass1234");
         String userJson = objectMapper.writeValueAsString(user);
 
         when(userService.existsUser("fail_user")).thenReturn(false);
-        when(passwordEncoder.encode("pass")).thenReturn("encoded-pass");
+        when(passwordEncoder.encode("pass1234")).thenReturn("encoded-pass");
         doThrow(new RuntimeException("DB error")).when(userService).addUser(any());
 
         mockMvc.perform(post("/api/auth/register")

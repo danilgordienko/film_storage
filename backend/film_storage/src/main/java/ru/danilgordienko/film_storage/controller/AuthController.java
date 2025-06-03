@@ -37,7 +37,7 @@ public class AuthController {
      * Аутентификация пользователя и выдача JWT-токена
      */
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody User user) {
+    public ResponseEntity<String> login(@RequestBody UserRegistrationDTO user) {
         log.info("Попытка входа пользователя: {}", user.getUsername());
         try {
             // Создаем объект аутентификации с переданными учетными данными

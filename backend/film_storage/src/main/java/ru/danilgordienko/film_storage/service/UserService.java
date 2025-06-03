@@ -10,7 +10,11 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import ru.danilgordienko.film_storage.DTO.UserFriendsDto;
+import ru.danilgordienko.film_storage.DTO.UserInfoDto;
+import ru.danilgordienko.film_storage.DTO.UserRatingDto;
 import ru.danilgordienko.film_storage.DTO.UserRegistrationDTO;
+import ru.danilgordienko.film_storage.DTO.mapping.UserMapping;
 import ru.danilgordienko.film_storage.model.User;
 import ru.danilgordienko.film_storage.repository.UserRepository;
 import ru.danilgordienko.film_storage.security.UserDetailsImpl;
@@ -23,6 +27,7 @@ import java.util.Optional;
 public class UserService implements UserDetailsService {
 
     private UserRepository userRepository;
+    private UserMapping userMapping;
 
 
     @Override
@@ -54,5 +59,50 @@ public class UserService implements UserDetailsService {
         boolean exists = userRepository.existsByUsername(username);
         log.info("Проверка существования пользователя '{}': {}", username, exists);
         return exists;
+    }
+
+    public Optional<UserInfoDto> getUserInfo(Long id){
+        log.info("Получение пользователя из бд с ID = {}", id);
+        return userRepository.findById(id)
+                .map(user -> {
+                    log.info("Пользователь найден: {}", user.getUsername());
+                    return userMapping.toUserInfoDto(user);
+                });
+    }
+
+    public Optional<UserRatingDto> getUserRatings(Long id){
+        log.info("Получение пользователя из бд с ID = {}", id);
+        return userRepository.findById(id)
+                .map(user -> {
+                    log.info("Пользователь найден: {}", user.getUsername());
+                    return userMapping.toUserRatingDto(user);
+                });
+    }
+
+    public Optional<UserFriendsDto> getUserFriends(Long id){
+        log.info("Получение пользователя из бд с ID = {}", id);
+        return userRepository.findById(id)
+                .map(user -> {
+                    log.info("Пользователь найден: {}", user.getUsername());
+                    return userMapping.toUserFriendsDto(user);
+                });
+    }
+
+    public Optional<UserRatingDto> getUserRatingsByUsername(String username){
+        log.info("Получение пользователя {} из бд", username);
+        return userRepository.findByUsername(username)
+                .map(user -> {
+                    log.info("Пользователь найден: {}", user.getUsername());
+                    return userMapping.toUserRatingDto(user);
+                });
+    }
+
+    public Optional<UserInfoDto> getUserInfoByUsername(String username){
+        log.info("Получение пользователя {} из бд", username);
+        return userRepository.findByUsername(username)
+                .map(user -> {
+                    log.info("Пользователь найден: {}", user.getUsername());
+                    return userMapping.toUserInfoDto(user);
+                });
     }
 }

@@ -24,7 +24,7 @@ public class FavoriteService {
 
     //добавление фильма в избранное
     public void addFavorite(Long id) {
-        //забираем username из текущей аунтификации
+        //забираем username из текущей аунтификации.
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         log.info("Добавление фильма в избранное. Пользователь: {}, Фильм ID: {}", username, id);
 
