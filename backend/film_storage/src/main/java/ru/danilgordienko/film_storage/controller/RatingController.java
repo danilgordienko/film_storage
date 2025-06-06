@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
@@ -31,6 +33,7 @@ public class RatingController {
      */
     @PostMapping("/movies/{id}/ratings")
     public ResponseEntity<String> addRating(@PathVariable Long id,
+                                            @AuthenticationPrincipal UserDetails userDetails,
                                             @RequestBody @Valid RatingDto rating,
                                             BindingResult bindingResult) {
         log.info("Запрос на добавление рейтинга фильму: id={}, rating={}", id, rating);
@@ -46,12 +49,12 @@ public class RatingController {
                 return ResponseEntity.badRequest().body(errorMessage);
             }
 
-            ratingService.addRating(id, rating);
+            if(!ratingService.addRating(id, rating, userDetails.getUsername())){
+                log.warn("Ошибка при добавлении рейтинга фильму: id={}", id);
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            }
             log.info("Рейтинг успешно добавлен фильму: id={}", id);
             return ResponseEntity.ok("Рейтинг добавлен");
-        } catch (EntityNotFoundException e) {
-            log.warn("Фильм не найден при добавлении рейтинга: id={}, message={}", id, e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (Exception e) {
             log.error("Ошибка сервера при добавлении рейтинга фильму: id={}, error={}", id, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Ошибка сервера");

@@ -24,34 +24,31 @@ public class RatingService {
 
 
     //добавляем рейтинг к фильму
-    public void addRating(Long id, RatingDto rating) {
-        //забираем username из текущей аунтификации
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        log.info("Попытка добавить рейтинг. Пользователь: {}, Фильм ID: {}, Рейтинг: {}, Комментарий: {}",
-                username, id, rating.getRating(), rating.getComment());
+    public boolean addRating(Long id, RatingDto rating, String username)
+    {
+        var user = userRepository.findByUsername(username);
+        var movie = movieRepository.findById(id);
 
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> {
-                    log.warn("Пользователь с именем '{}' не найден", username);
-                    return new EntityNotFoundException("Пользователь не найден");
-                });
-
-        Movie movie = movieRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.warn("Фильм с ID '{}' не найден", id);
-                    return new EntityNotFoundException("Фильм не найден");
-                });
+        if (user.isEmpty()){
+            log.warn("Пользователь с именем '{}' не найден", username);
+            return false;
+        }
+        if (movie.isEmpty()){
+            log.warn("Фильм с ID '{}' не найден", id);
+            return false;
+        }
 
         Rating rate = Rating.builder()
-                .movie(movie)
-                .user(user)
+                .movie(movie.get())
+                .user(user.get())
                 .rating(rating.getRating())
                 .comment(rating.getComment())
                 .build();
 
         ratingRepository.save(rate);
         log.info("Рейтинг успешно добавлен. Пользователь: {}, Фильм: {}, Оценка: {}",
-                user.getUsername(), movie.getTitle(), rate.getRating());
+                user.get().getUsername(), movie.get().getTitle(), rate.getRating());
+        return true;
     }
 
 }

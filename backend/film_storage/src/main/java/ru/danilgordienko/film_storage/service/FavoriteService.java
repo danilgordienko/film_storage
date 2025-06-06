@@ -23,52 +23,50 @@ public class FavoriteService {
     private final MovieRepository movieRepository;
 
     //добавление фильма в избранное
-    public void addFavorite(Long id) {
-        //забираем username из текущей аунтификации.
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+    public boolean addFavorite(Long id, String username) {
         log.info("Добавление фильма в избранное. Пользователь: {}, Фильм ID: {}", username, id);
 
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> {
-                    log.warn("Пользователь с именем '{}' не найден", username);
-                    return new EntityNotFoundException("Пользователь не найден");
-                });
+        var user = userRepository.findByUsername(username);
+        var movie = movieRepository.findById(id);
 
-        Movie movie = movieRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.warn("Фильм с ID '{}' не найден", id);
-                    return new EntityNotFoundException("Фильм не найден");
-                });
+        if (user.isEmpty()){
+            log.warn("Пользователь с именем '{}' не найден", username);
+            return false;
+        }
+        if (movie.isEmpty()){
+            log.warn("Фильм с ID '{}' не найден", id);
+            return false;
+        }
 
         Favorite favorite = Favorite
                 .builder()
-                .movie(movie)
-                .user(user)
+                .movie(movie.get())
+                .user(user.get())
                 .build();
 
         favoriteRepository.save(favorite);
-        log.info("Фильм '{}' добавлен в избранное пользователем '{}'", movie.getTitle(), user.getUsername());
+        log.info("Фильм '{}' добавлен в избранное пользователем '{}'", movie.get().getTitle(), user.get().getUsername());
+        return true;
     }
 
-    public void removeFavorite(Long id) {
-        //забираем username из текущей аунтификации
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+    public boolean removeFavorite(Long id, String username) {
         log.info("Удаление фильма из избранного. Пользователь: {}, Фильм ID: {}", username, id);
 
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> {
-                    log.warn("Пользователь с именем '{}' не найден", username);
-                    return new EntityNotFoundException("Пользователь не найден");
-                });
+        var user = userRepository.findByUsername(username);
+        var movie = movieRepository.findById(id);
 
-        Movie movie = movieRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.warn("Фильм с ID '{}' не найден", id);
-                    return new EntityNotFoundException("Фильм не найден");
-                });
+        if (user.isEmpty()){
+            log.warn("Пользователь с именем '{}' не найден", username);
+            return false;
+        }
+        if (movie.isEmpty()){
+            log.warn("Фильм с ID '{}' не найден", id);
+            return false;
+        }
 
-        favoriteRepository.deleteByUserAndMovie(user, movie);
-        log.info("Фильм '{}' удалён из избранного пользователем '{}'", movie.getTitle(), user.getUsername());
+        favoriteRepository.deleteByUserAndMovie(user.get(), movie.get());
+        log.info("Фильм '{}' удалён из избранного пользователем '{}'", movie.get().getTitle(), user.get().getUsername());
+        return true;
     }
 
 }

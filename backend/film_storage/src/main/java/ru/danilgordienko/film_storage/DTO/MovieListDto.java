@@ -11,6 +11,8 @@ public class MovieListDto {
 
     private Date release_date;
 
+    private String posterUrl;
+
     private List<String> genres;
 
     private int rating;

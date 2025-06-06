@@ -4,13 +4,16 @@ package ru.danilgordienko.film_storage.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.danilgordienko.film_storage.DTO.MovieDetailsDto;
 import ru.danilgordienko.film_storage.DTO.MovieListDto;
+import ru.danilgordienko.film_storage.model.Movie;
 import ru.danilgordienko.film_storage.service.MovieService;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/movies")
@@ -56,4 +59,16 @@ public class MovieController {
                     return new ResponseEntity<>(HttpStatus.NOT_FOUND);
                 });
     }
+
+    @GetMapping("/{id}/poster")
+    public ResponseEntity<byte[]> getMoviePoster(@PathVariable Long id) {
+        byte[] poster = movieService.getPoster(id);
+        if (poster.length != 0) {
+            return ResponseEntity.ok()
+                    .contentType(MediaType.IMAGE_JPEG) // или IMAGE_PNG если сохраняется PNG
+                    .body(poster);
+        }
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+
 }

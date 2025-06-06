@@ -15,12 +15,13 @@ import java.util.Set;
 @Mapper(componentModel = "spring", uses = RatingMapping.class)
 public interface MovieMapping {
 
-
     @Mapping(target = "genres", expression = "java(mapGenres(movie.getGenres()))")
     @Mapping(target = "rating", expression = "java(calculateAverageRating(movie.getRatings()))")
+    @Mapping(target = "posterUrl", expression = "java(getPosterUrl(movie.getId()))")
     MovieListDto toMovieListDto(Movie movie);
 
     @Mapping(target = "genres", expression = "java(mapGenres(movie.getGenres()))")
+    @Mapping(target = "posterUrl", expression = "java(getPosterUrl(movie.getId()))")
     MovieDetailsDto toMovieDetailsDto(Movie movie);
 
     //преобразует жанры в список с названиями жанров
@@ -28,6 +29,11 @@ public interface MovieMapping {
         return genres.stream()
                 .map(Genre::getName)
                 .toList();
+    }
+
+    // url для получения постера к фильмы из базы данных
+    default String getPosterUrl(Long id) {
+        return "http://localhost:8080/api/movies/" + id + "/poster";
     }
 
     //считает средний рейтинг
