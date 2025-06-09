@@ -60,15 +60,32 @@ public class MovieController {
                 });
     }
 
+    // получение постера к фильму
     @GetMapping("/{id}/poster")
     public ResponseEntity<byte[]> getMoviePoster(@PathVariable Long id) {
         byte[] poster = movieService.getPoster(id);
         if (poster.length != 0) {
             return ResponseEntity.ok()
-                    .contentType(MediaType.IMAGE_JPEG) // или IMAGE_PNG если сохраняется PNG
+                    .contentType(MediaType.IMAGE_JPEG)
                     .body(poster);
         }
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+
+    // поиск фильмов по запросу query
+    @GetMapping("/search")
+    public ResponseEntity<List<MovieListDto>> searchMovies(@RequestParam("query") String query) {
+        log.info("GET /api/movies/search - поиск фильмов по запросу: {}", query);
+
+        List<MovieListDto> movies = movieService.searchMoviesByTitle(query);
+
+        if (movies.isEmpty()) {
+            log.warn("По запросу '{}' фильмы не найдены", query);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+
+        log.info("По запросу '{}' найдено {} фильмов", query, movies.size());
+        return ResponseEntity.ok(movies);
     }
 
 }

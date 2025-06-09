@@ -2,7 +2,6 @@ package ru.danilgordienko.film_storage.service;
 
 
 import jakarta.annotation.PostConstruct;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -14,6 +13,7 @@ import ru.danilgordienko.film_storage.model.*;
 import ru.danilgordienko.film_storage.TmdbAPI.TmdbMovie;
 import ru.danilgordienko.film_storage.repository.GenreRepository;
 import ru.danilgordienko.film_storage.repository.MovieRepository;
+import ru.danilgordienko.film_storage.repository.MovieSearchRepository;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -30,10 +30,13 @@ public class MovieService {
     private final MovieRepository movieRepository;
     private final GenreRepository genreRepository;
     private final MovieMapping  movieMapping;
+    private final MovieSearchRepository movieSearchRepository;
 
 //    @PostConstruct
 //    public void init() {
-//        populateMovies();
+//        //populateMovies();
+//        var movies = movieRepository.findAll();
+//        movieSearchRepository.saveAll(movies.stream().map(movieMapping::toMovieDocument).collect(Collectors.toList()));
 //    }
 
     // Получение всех фильмов из базы данных
@@ -54,6 +57,28 @@ public class MovieService {
                     log.info("Фильм найден: {}", movie.getTitle());
                     return movieMapping.toMovieDetailsDto(movie);
                 });
+    }
+
+    //Поиск фильмов по запросу query
+    public List<MovieListDto> searchMoviesByTitle(String query) {
+        log.info("Поиск фильмов в Elasticsearch по названию: {}", query);
+
+        var searchResults = movieSearchRepository.searchByTitle(query);
+
+        var movies = searchResults.stream()
+                .map(movieMapping::toMovieListDto)
+                .collect(Collectors.toList());
+
+        log.info("Найдено {} фильмов в Elasticsearch по запросу '{}'", movies.size(), query);
+
+        return movies;
+    }
+
+    public byte[] getPoster(Long id) {
+        return movieRepository.findById(id)
+                .map(Movie::getPoster)
+                .orElse(new byte[0]);
+
     }
 
     //получение списка фильмов из внешнего api
@@ -106,6 +131,13 @@ public class MovieService {
         }
 
         movie.setGenres(tmdbMovie.getGenres());
+
+        // Загружаем постер
+//        if (tmdbMovie.getPosterPath() != null) {
+//            byte[] poster = tmdbClient.downloadPoster(tmdbMovie.getPosterPath());
+//            movie.setPoster(poster);
+//        }
+
         return movie;
     }
 
@@ -117,6 +149,13 @@ public class MovieService {
         log.info("Сохранено {} жанров", genres.size());
 
         List<Movie> movies = getPopularMovies();
+        // Проверяем каждый фильм перед сохранением
+//        movies.forEach(movie -> {
+//            if (movie.getPoster() == null || movie.getPoster().length == 0) {
+//                log.warn("Фильм '{}' не имеет постера, сохраняем как пустой.", movie.getTitle());
+//                movie.setPoster(new byte[0]);  // Убедись, что всегда есть массив байт
+//            }
+//        });
         movieRepository.saveAll(movies);
         log.info("Сохранено {} фильмов", movies.size());
     }

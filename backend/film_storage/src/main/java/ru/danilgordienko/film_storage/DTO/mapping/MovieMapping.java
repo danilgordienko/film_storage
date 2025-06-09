@@ -7,6 +7,7 @@ import ru.danilgordienko.film_storage.DTO.MovieDetailsDto;
 import ru.danilgordienko.film_storage.DTO.MovieListDto;
 import ru.danilgordienko.film_storage.model.Genre;
 import ru.danilgordienko.film_storage.model.Movie;
+import ru.danilgordienko.film_storage.model.MovieDocument;
 import ru.danilgordienko.film_storage.model.Rating;
 
 import java.util.List;
@@ -15,14 +16,26 @@ import java.util.Set;
 @Mapper(componentModel = "spring", uses = RatingMapping.class)
 public interface MovieMapping {
 
+    // из JPA Movie
     @Mapping(target = "genres", expression = "java(mapGenres(movie.getGenres()))")
     @Mapping(target = "rating", expression = "java(calculateAverageRating(movie.getRatings()))")
     @Mapping(target = "posterUrl", expression = "java(getPosterUrl(movie.getId()))")
     MovieListDto toMovieListDto(Movie movie);
 
+    // из Elasticsearch MovieDocument
+    @Mapping(target = "posterUrl", expression = "java(getPosterUrl(movie.getId()))")
+    @Mapping(target = "rating", source = "averageRating")
+    MovieListDto toMovieListDto(MovieDocument movie);
+
     @Mapping(target = "genres", expression = "java(mapGenres(movie.getGenres()))")
     @Mapping(target = "posterUrl", expression = "java(getPosterUrl(movie.getId()))")
     MovieDetailsDto toMovieDetailsDto(Movie movie);
+
+    @Mapping(target = "genres", expression = "java(mapGenres(movie.getGenres()))")
+    @Mapping(target = "averageRating", expression = "java(calculateAverageRating(movie.getRatings()))")
+    MovieDocument toMovieDocument(Movie movie);
+
+
 
     //преобразует жанры в список с названиями жанров
     default List<String> mapGenres(Set<Genre> genres) {

@@ -19,12 +19,16 @@ public class Movie {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String title;
+    private Date release_date;
 
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    private Date release_date;
+    private String title;
+
+    @Lob
+    //@Column(name = "poster", columnDefinition = "BYTEA")
+    private byte[] poster;
 
     @ManyToMany
     @JoinTable(

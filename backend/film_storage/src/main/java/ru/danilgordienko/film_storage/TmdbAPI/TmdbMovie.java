@@ -18,9 +18,11 @@ import java.util.Set;
 public class TmdbMovie {
     private String title;
     private String overview;
-    @JsonProperty("release_date")  // Указываем, что поле в JSON называется "release_date"
+    @JsonProperty("release_date")
     private String releaseDate;
-    @JsonProperty("genre_ids")  // Указываем, что поле в JSON называется "genre_ids"
+    @JsonProperty("poster_path")
+    private String posterPath;
+    @JsonProperty("genre_ids")
     private List<Long> genreIds;
     private Set<Genre> genres;
 }

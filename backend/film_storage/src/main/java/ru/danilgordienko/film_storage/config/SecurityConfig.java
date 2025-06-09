@@ -1,4 +1,4 @@
-package ru.danilgordienko.film_storage.security;
+package ru.danilgordienko.film_storage.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.cors.CorsConfiguration;
@@ -14,10 +14,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.client.RestTemplate;
+import ru.danilgordienko.film_storage.security.JWTAuthenticationFilter;
+import ru.danilgordienko.film_storage.security.JWTCore;
 import ru.danilgordienko.film_storage.service.UserService;
 
-import static org.springframework.security.config.Customizer.withDefaults;
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
 
 @Configuration
@@ -32,10 +32,10 @@ public class SecurityConfig {
         this.userService = userService;
     }
 
-    @Bean
-    public RestTemplate restTemplate() {
-        return new RestTemplate();
-    }
+//    @Bean
+//    public RestTemplate restTemplate() {
+//        return new RestTemplate();
+//    }
 
     /**
      * Определение AuthenticationManager, который управляет процессом аутентификации.
@@ -69,7 +69,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http.csrf(AbstractHttpConfigurer::disable)
-                .cors(withDefaults())
+                //.cors(withDefaults())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/movies/**").hasRole("USER")
                         .requestMatchers("/api/auth/**").permitAll()

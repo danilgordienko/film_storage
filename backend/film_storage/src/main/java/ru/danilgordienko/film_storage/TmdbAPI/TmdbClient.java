@@ -3,6 +3,8 @@ package ru.danilgordienko.film_storage.TmdbAPI;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -14,12 +16,13 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TmdbClient {
 
     //api ключ для допступа к tmdb api
     @Value("${app.key}")
     private String API_KEY;
-    private final RestTemplate restTemplate;
+    private final RestTemplate restTemplate; //=  new RestTemplate();
 
     //url для получения всех жанров
     private String getGenreUrl() {
@@ -41,14 +44,33 @@ public class TmdbClient {
             }
             return tmdbResponse.getResults();
         } catch (HttpClientErrorException | HttpServerErrorException e) {
-            //log.error("TMDb API error: {}", e.getMessage());
+            log.error("TMDb API error: {}", e.getMessage());
         } catch (ResourceAccessException e) {
-            //log.error("Network error while accessing TMDb API: {}", e.getMessage());
+            log.error("Network error while accessing TMDb API: {}", e.getMessage());
         } catch (RestClientException e) {
-            //log.error("Unknown error while accessing TMDb API", e);
+            log.error("Unknown error while accessing TMDb API", e);
         }
         return List.of();
     }
+
+    public byte[] downloadPoster(String posterPath) {
+        if (posterPath == null || posterPath.isBlank()) {
+            return new byte[0]; // ← возвращаем пустой массив вместо null
+        }
+        String imageUrl = "https://image.tmdb.org/t/p/w500" + posterPath;
+        try {
+            ResponseEntity<byte[]> response = restTemplate.getForEntity(imageUrl, byte[].class);
+            if (response.getStatusCode().is2xxSuccessful()) {
+                return response.getBody() != null ? response.getBody() : new byte[0]; // ← защита от null
+            } else {
+                log.warn("Ошибка загрузки постера: код ответа {}", response.getStatusCode());
+            }
+        } catch (Exception e) {
+            log.warn("Ошибка при загрузке постера с URL {}: {}", imageUrl, e.getMessage());
+        }
+        return new byte[0];
+    }
+
 
     //класс для хранения ответа с api
     @Getter
@@ -78,11 +100,11 @@ public class TmdbClient {
                 return genreResponse.getGenres();
             }
         }catch (HttpClientErrorException | HttpServerErrorException e) {
-            //log.error("TMDb API error: {}", e.getMessage());
+            log.error("TMDb API error: {}", e.getMessage());
         } catch (ResourceAccessException e) {
-            //log.error("Network error while accessing TMDb API: {}", e.getMessage());
+            log.error("Network error while accessing TMDb API: {}", e.getMessage());
         } catch (RestClientException e) {
-            //log.error("Unknown error while accessing TMDb API", e);
+            log.error("Unknown error while accessing TMDb API", e);
         }
         return List.of();
     }

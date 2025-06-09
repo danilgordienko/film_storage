@@ -10,8 +10,11 @@ import ru.danilgordienko.film_storage.model.Movie;
 import ru.danilgordienko.film_storage.model.Rating;
 import ru.danilgordienko.film_storage.model.User;
 import ru.danilgordienko.film_storage.repository.MovieRepository;
+import ru.danilgordienko.film_storage.repository.MovieSearchRepository;
 import ru.danilgordienko.film_storage.repository.RatingRepository;
 import ru.danilgordienko.film_storage.repository.UserRepository;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +24,7 @@ public class RatingService {
     private final UserRepository userRepository;
     private final RatingRepository ratingRepository;
     private final MovieRepository movieRepository;
+    private final MovieSearchRepository  movieSearchRepository;
 
 
     //добавляем рейтинг к фильму
@@ -48,7 +52,33 @@ public class RatingService {
         ratingRepository.save(rate);
         log.info("Рейтинг успешно добавлен. Пользователь: {}, Фильм: {}, Оценка: {}",
                 user.get().getUsername(), movie.get().getTitle(), rate.getRating());
+
+        // Обновляем среднюю оценку
+        updateAverageRatingInElasticsearch(movie.get());
         return true;
     }
+
+    // обноляет среднюю оценку у фильма в Elasticsearch
+    private void updateAverageRatingInElasticsearch(Movie movie) {
+        double avgRating = calculateAverageRating(movie);
+
+        movieSearchRepository.findById(movie.getId()).ifPresent(movieDoc -> {
+            movieDoc.setAverageRating(avgRating);
+            movieSearchRepository.save(movieDoc);
+            log.info("Средняя оценка обновлена в Elasticsearch: {}", avgRating);
+        });
+    }
+
+    // считает среднуюю оценку фильма
+    private double calculateAverageRating(Movie movie) {
+        List<Rating> ratings = movie.getRatings();
+        if (ratings == null || ratings.isEmpty()) return 0.0;
+
+        return ratings.stream()
+                .mapToInt(Rating::getRating)
+                .average()
+                .orElse(0.0);
+    }
+
 
 }
