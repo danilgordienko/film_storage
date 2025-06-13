@@ -20,6 +20,7 @@ public interface MovieMapping {
     @Mapping(target = "genres", expression = "java(mapGenres(movie.getGenres()))")
     @Mapping(target = "rating", expression = "java(calculateAverageRating(movie.getRatings()))")
     @Mapping(target = "posterUrl", expression = "java(getPosterUrl(movie.getId()))")
+    @Mapping(target = "id", expression = "java(movie.getId())")
     MovieListDto toMovieListDto(Movie movie);
 
     // из Elasticsearch MovieDocument
@@ -50,7 +51,7 @@ public interface MovieMapping {
     }
 
     //считает средний рейтинг
-    default int calculateAverageRating(List<Rating> ratings) {
+    default double calculateAverageRating(List<Rating> ratings) {
         if (ratings == null || ratings.isEmpty()) {
             return 0;
         }
@@ -58,6 +59,6 @@ public interface MovieMapping {
                 .mapToInt(Rating::getRating)
                 .average()
                 .orElse(0);
-        return (int) Math.round(avg);
+        return Math.round(avg * 10.0) / 10.0;
     }
 }

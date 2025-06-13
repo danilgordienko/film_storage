@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.danilgordienko.film_storage.DTO.FriendRequestDto;
 import ru.danilgordienko.film_storage.DTO.UserFriendsDto;
+import ru.danilgordienko.film_storage.DTO.UserInfoDto;
 import ru.danilgordienko.film_storage.DTO.mapping.FriendRequestMapping;
 import ru.danilgordienko.film_storage.DTO.mapping.UserMapping;
 import ru.danilgordienko.film_storage.model.FriendRequest;
@@ -26,7 +27,7 @@ public class FriendshipService {
     private final UserRepository userRepository;
     private final UserMapping  userMapping;
     private final FriendRequestRepository friendRequestRepository;
-    private final FriendRequestMapping  friendRequestMapping;
+
 
     //получение друзей текущего пользователя
     public Optional<UserFriendsDto> getCurrentUserFriends(String username) {
@@ -44,6 +45,7 @@ public class FriendshipService {
         var friendRequest = checkAndGetFriendRequest(username, targetId, true);
         if(friendRequest.isEmpty())
             return false;
+
         friendRequestRepository.save(friendRequest.get());
         log.info("Заявка в друзья от пользователя {} пользователю с id: {} успешно отправлена",  username, targetId);
         return true;
@@ -88,6 +90,10 @@ public class FriendshipService {
         }
         if (userWithUsername.isEmpty()){
             log.warn("Пользователь '{}' не найден", username);
+            return Optional.empty();
+        }
+        if (userWithUsername.get().equals(userWithId.get())) {
+            log.warn("Отправитель и получатель совпадают: '{}' ", username);
             return Optional.empty();
         }
         // если первый юзер отправитель, то ставим его в sender
@@ -138,24 +144,26 @@ public class FriendshipService {
     }
 
     // получение входящих запросов в друзья для текущего пользователя
-    public List<FriendRequestDto> getIncomingRequests(String username) {
+    public List<UserInfoDto> getIncomingRequests(String username) {
         Optional<User> user = userRepository.findByUsername(username);
         if(user.isEmpty()){
             log.warn("");
             return List.of();
         }
         return friendRequestRepository.findByReceiver(user.get())
-                .stream().map(friendRequestMapping::toFriendRequestDto).toList();
+                .stream().map(r -> userMapping.toUserInfoDto(r.getSender())).toList();
     }
 
     // получение отправленных запросов от текущего пользователя
-    public List<FriendRequestDto> getOutgoingRequests(String username) {
+    public List<UserInfoDto> getOutgoingRequests(String username) {
         Optional<User> user = userRepository.findByUsername(username);
         if(user.isEmpty()){
             log.warn("");
             return List.of();
         }
         return friendRequestRepository.findBySender(user.get())
-                .stream().map(friendRequestMapping::toFriendRequestDto).toList();
+                .stream().map(r -> userMapping.toUserInfoDto(r.getReceiver())).toList();
     }
+
+
 }

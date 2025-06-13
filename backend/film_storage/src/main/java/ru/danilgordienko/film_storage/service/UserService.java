@@ -1,6 +1,8 @@
 package ru.danilgordienko.film_storage.service;
 
 
+import jakarta.annotation.PostConstruct;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,9 +19,12 @@ import ru.danilgordienko.film_storage.DTO.UserRegistrationDTO;
 import ru.danilgordienko.film_storage.DTO.mapping.UserMapping;
 import ru.danilgordienko.film_storage.model.User;
 import ru.danilgordienko.film_storage.repository.UserRepository;
+import ru.danilgordienko.film_storage.repository.UserSearchRepository;
 import ru.danilgordienko.film_storage.security.UserDetailsImpl;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -28,7 +33,13 @@ public class UserService implements UserDetailsService {
 
     private UserRepository userRepository;
     private UserMapping userMapping;
+    private UserSearchRepository  userSearchRepository;
 
+//    @PostConstruct
+//    public void init() {
+//        var movies = userRepository.findAll();
+//        userSearchRepository.saveAll(movies.stream().map(userMapping::toUserDocument).toList());
+//    }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -43,6 +54,22 @@ public class UserService implements UserDetailsService {
         return UserDetailsImpl.build(user);
     }
 
+    public List<UserInfoDto> searchUserByTitle(String query){
+        log.info("Поиск пользователей в Elasticsearch по названию: {}", query);
+
+        var searchResults = userSearchRepository.searchByUsername(query);
+
+        var users = searchResults.stream()
+                .map(userMapping::toUserInfoDto)
+                .toList();
+
+        log.info("Найдено {} пользователей в Elasticsearch по запросу '{}'", users.size(), query);
+
+        return users;
+
+    }
+
+    @Transactional
     public void addUser(UserRegistrationDTO user) {
         log.info("Регистрация нового пользователя: {}", user.getUsername());
 
@@ -52,6 +79,7 @@ public class UserService implements UserDetailsService {
                 .build();
 
         userRepository.save(userToAdd);
+        userSearchRepository.save(userMapping.toUserDocument(userToAdd));
         log.info("Пользователь '{}' успешно зарегистрирован", user.getUsername());
     }
 

@@ -7,6 +7,8 @@ import java.util.List;
 
 @Data
 public class MovieListDto {
+    private Long id;
+
     private String title;
 
     private Date release_date;
@@ -15,5 +17,5 @@ public class MovieListDto {
 
     private List<String> genres;
 
-    private int rating;
+    private double rating;
 }
