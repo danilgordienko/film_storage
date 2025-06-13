@@ -2,12 +2,14 @@ package ru.danilgordienko.film_storage.service;
 
 
 import jakarta.annotation.PostConstruct;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.danilgordienko.film_storage.DTO.MovieDetailsDto;
 import ru.danilgordienko.film_storage.DTO.MovieListDto;
 import ru.danilgordienko.film_storage.DTO.mapping.MovieMapping;
+import ru.danilgordienko.film_storage.DTO.mapping.UserMapping;
 import ru.danilgordienko.film_storage.TmdbAPI.TmdbClient;
 import ru.danilgordienko.film_storage.model.*;
 import ru.danilgordienko.film_storage.TmdbAPI.TmdbMovie;
@@ -67,7 +69,7 @@ public class MovieService {
 
         var movies = searchResults.stream()
                 .map(movieMapping::toMovieListDto)
-                .collect(Collectors.toList());
+                .toList();
 
         log.info("Найдено {} фильмов в Elasticsearch по запросу '{}'", movies.size(), query);
 
@@ -142,6 +144,7 @@ public class MovieService {
     }
 
     // Заполнение базы данных фильмами и жанрами
+    @Transactional
     public void populateMovies() {
         log.info("Заполнение базы данных жанрами и популярными фильмами...");
         List<Genre> genres = tmdbClient.loadGenres();
@@ -157,6 +160,7 @@ public class MovieService {
 //            }
 //        });
         movieRepository.saveAll(movies);
+        movieSearchRepository.saveAll(movies.stream().map(movieMapping::toMovieDocument).toList());
         log.info("Сохранено {} фильмов", movies.size());
     }
 

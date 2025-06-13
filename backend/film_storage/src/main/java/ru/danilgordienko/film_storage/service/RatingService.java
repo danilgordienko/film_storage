@@ -42,6 +42,11 @@ public class RatingService {
             return false;
         }
 
+        if (ratingRepository.existsByUser(user.get())){
+            log.warn("Отзыв не добавлен: пользователь с именем '{}' уже оставлял отзыв ", username);
+            return false;
+        }
+
         Rating rate = Rating.builder()
                 .movie(movie.get())
                 .user(user.get())

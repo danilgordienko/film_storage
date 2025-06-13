@@ -38,6 +38,12 @@ public class FavoriteService {
             return false;
         }
 
+        if (favoriteRepository.existsByUserAndMovie(user.get(), movie.get())){
+            log.warn("Фильм '{}' не добавлен в избранное пользователем '{}': фильм уже в избранном",
+                    movie.get().getTitle(), user.get().getUsername());
+            return false;
+        }
+
         Favorite favorite = Favorite
                 .builder()
                 .movie(movie.get())

@@ -10,4 +10,6 @@ import ru.danilgordienko.film_storage.model.User;
 public interface FavoriteRepository extends JpaRepository<Favorite,Long> {
 
     void deleteByUserAndMovie(User user, Movie movie);
+
+    boolean existsByUserAndMovie(User user, Movie movie);
 }
