@@ -6,12 +6,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import ru.danilgordienko.film_storage.DTO.UsersDto.UserFavoritesDto;
+import ru.danilgordienko.film_storage.DTO.mapping.UserMapping;
 import ru.danilgordienko.film_storage.model.Favorite;
 import ru.danilgordienko.film_storage.model.Movie;
 import ru.danilgordienko.film_storage.model.User;
 import ru.danilgordienko.film_storage.repository.FavoriteRepository;
 import ru.danilgordienko.film_storage.repository.MovieRepository;
 import ru.danilgordienko.film_storage.repository.UserRepository;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +25,7 @@ public class FavoriteService {
     private final FavoriteRepository favoriteRepository;
     private final UserRepository userRepository;
     private final MovieRepository movieRepository;
+    private final UserMapping userMapping;
 
     //добавление фильма в избранное
     public boolean addFavorite(Long id, String username) {
@@ -75,4 +80,12 @@ public class FavoriteService {
         return true;
     }
 
+    public Optional<UserFavoritesDto> getUserFavoritesByUsername(String username) {
+        log.info("Получение пользователя {} из бд", username);
+        return userRepository.findByUsername(username)
+                .map(user -> {
+                    log.info("Пользователь найден: {}", user.getUsername());
+                    return userMapping.toUserFavoritesDto(user);
+                });
+    }
 }

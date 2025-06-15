@@ -1,4 +1,4 @@
-package ru.danilgordienko.film_storage.DTO;
+package ru.danilgordienko.film_storage.DTO.UsersDto;
 
 import lombok.Data;
 

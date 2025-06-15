@@ -8,10 +8,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import ru.danilgordienko.film_storage.DTO.UsersDto.UserFavoritesDto;
+import ru.danilgordienko.film_storage.DTO.UsersDto.UserRatingDto;
 import ru.danilgordienko.film_storage.service.FavoriteService;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/favorites")
 @RequiredArgsConstructor
 @Slf4j
 public class FavoriteController {
@@ -21,7 +23,7 @@ public class FavoriteController {
     /**
      * добавление фильма в избранное
      */
-    @PostMapping("movies/{id}/favorites")
+    @PostMapping("/add/movies/{id}")
     public ResponseEntity<String> addFavorite(@PathVariable Long id,
                                               @AuthenticationPrincipal UserDetails userDetails){
         log.info("Запрос на добавление фильма в избранное: id={}", id);
@@ -41,7 +43,7 @@ public class FavoriteController {
     /**
      * удаление фильма из избранного
      */
-    @DeleteMapping("movies/{id}/favorites")
+    @DeleteMapping("/remove/movies/{id}")
     public ResponseEntity<String> deleteFavorite(@PathVariable Long id,
                                                  @AuthenticationPrincipal UserDetails userDetails){
         log.info("Запрос на удаление фильма из избранного: id={}", id);
@@ -59,8 +61,16 @@ public class FavoriteController {
         }
     }
 
+    @GetMapping
+    public ResponseEntity<UserFavoritesDto> getCurrentUserFavorites(@AuthenticationPrincipal UserDetails userDetails) {
+        log.info("Запрос избранного текущего пользователя: {}", userDetails.getUsername());
 
-
-
+        return favoriteService.getUserFavoritesByUsername(userDetails.getUsername())
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> {
+                    log.warn("Избранное пользователя {} не найдены", userDetails.getUsername());
+                    return ResponseEntity.notFound().build();
+                });
+    }
 
 }

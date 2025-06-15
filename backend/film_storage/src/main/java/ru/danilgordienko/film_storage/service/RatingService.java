@@ -1,20 +1,20 @@
 package ru.danilgordienko.film_storage.service;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import ru.danilgordienko.film_storage.DTO.RatingDto;
+import ru.danilgordienko.film_storage.DTO.UsersDto.UserRatingDto;
+import ru.danilgordienko.film_storage.DTO.mapping.UserMapping;
 import ru.danilgordienko.film_storage.model.Movie;
 import ru.danilgordienko.film_storage.model.Rating;
-import ru.danilgordienko.film_storage.model.User;
 import ru.danilgordienko.film_storage.repository.MovieRepository;
 import ru.danilgordienko.film_storage.repository.MovieSearchRepository;
 import ru.danilgordienko.film_storage.repository.RatingRepository;
 import ru.danilgordienko.film_storage.repository.UserRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +25,7 @@ public class RatingService {
     private final RatingRepository ratingRepository;
     private final MovieRepository movieRepository;
     private final MovieSearchRepository  movieSearchRepository;
+    private final UserMapping  userMapping;
 
 
     //добавляем рейтинг к фильму
@@ -42,7 +43,7 @@ public class RatingService {
             return false;
         }
 
-        if (ratingRepository.existsByUser(user.get())){
+        if (ratingRepository.existsByUserAndMovie(user.get(), movie.get())){
             log.warn("Отзыв не добавлен: пользователь с именем '{}' уже оставлял отзыв ", username);
             return false;
         }
@@ -85,5 +86,21 @@ public class RatingService {
                 .orElse(0.0);
     }
 
+    public Optional<UserRatingDto> getUserRatingsByUsername(String username){
+        log.info("Получение пользователя {} из бд", username);
+        return userRepository.findByUsername(username)
+                .map(user -> {
+                    log.info("Пользователь найден: {}", user.getUsername());
+                    return userMapping.toUserRatingDto(user);
+                });
+    }
 
+    public Optional<UserRatingDto> getUserRatings(Long id){
+        log.info("Получение пользователя из бд с ID = {}", id);
+        return userRepository.findById(id)
+                .map(user -> {
+                    log.info("Пользователь найден: {}", user.getUsername());
+                    return userMapping.toUserRatingDto(user);
+                });
+    }
 }

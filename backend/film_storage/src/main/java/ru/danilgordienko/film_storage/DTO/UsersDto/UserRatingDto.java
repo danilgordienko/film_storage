@@ -1,8 +1,8 @@
-package ru.danilgordienko.film_storage.DTO;
+package ru.danilgordienko.film_storage.DTO.UsersDto;
 
 import lombok.Data;
+import ru.danilgordienko.film_storage.DTO.RatingDto;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Data

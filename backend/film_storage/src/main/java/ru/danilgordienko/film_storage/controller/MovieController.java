@@ -7,13 +7,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.danilgordienko.film_storage.DTO.MovieDetailsDto;
-import ru.danilgordienko.film_storage.DTO.MovieListDto;
-import ru.danilgordienko.film_storage.model.Movie;
+import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieDetailsDto;
+import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieListDto;
 import ru.danilgordienko.film_storage.service.MovieService;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/movies")

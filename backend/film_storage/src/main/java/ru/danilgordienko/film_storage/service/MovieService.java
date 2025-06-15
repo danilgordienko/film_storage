@@ -1,15 +1,13 @@
 package ru.danilgordienko.film_storage.service;
 
 
-import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.danilgordienko.film_storage.DTO.MovieDetailsDto;
-import ru.danilgordienko.film_storage.DTO.MovieListDto;
+import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieDetailsDto;
+import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieListDto;
 import ru.danilgordienko.film_storage.DTO.mapping.MovieMapping;
-import ru.danilgordienko.film_storage.DTO.mapping.UserMapping;
 import ru.danilgordienko.film_storage.TmdbAPI.TmdbClient;
 import ru.danilgordienko.film_storage.model.*;
 import ru.danilgordienko.film_storage.TmdbAPI.TmdbMovie;

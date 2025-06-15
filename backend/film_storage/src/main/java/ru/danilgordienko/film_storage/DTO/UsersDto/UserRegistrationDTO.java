@@ -1,7 +1,6 @@
-package ru.danilgordienko.film_storage.DTO;
+package ru.danilgordienko.film_storage.DTO.UsersDto;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 

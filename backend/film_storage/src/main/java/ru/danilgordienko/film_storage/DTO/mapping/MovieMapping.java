@@ -3,8 +3,9 @@ package ru.danilgordienko.film_storage.DTO.mapping;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import ru.danilgordienko.film_storage.DTO.MovieDetailsDto;
-import ru.danilgordienko.film_storage.DTO.MovieListDto;
+import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieDetailsDto;
+import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieListDto;
+import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieNameDto;
 import ru.danilgordienko.film_storage.model.Genre;
 import ru.danilgordienko.film_storage.model.Movie;
 import ru.danilgordienko.film_storage.model.MovieDocument;
@@ -27,6 +28,9 @@ public interface MovieMapping {
     @Mapping(target = "posterUrl", expression = "java(getPosterUrl(movie.getId()))")
     @Mapping(target = "rating", source = "averageRating")
     MovieListDto toMovieListDto(MovieDocument movie);
+
+    @Mapping(target = "id", expression = "java(movie.getId())")
+    MovieNameDto toMovieNameDto(Movie movie);
 
     @Mapping(target = "genres", expression = "java(mapGenres(movie.getGenres()))")
     @Mapping(target = "posterUrl", expression = "java(getPosterUrl(movie.getId()))")

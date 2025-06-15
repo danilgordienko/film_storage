@@ -5,14 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
-import ru.danilgordienko.film_storage.DTO.FriendRequestDto;
-import ru.danilgordienko.film_storage.DTO.MovieListDto;
-import ru.danilgordienko.film_storage.DTO.UserFriendsDto;
-import ru.danilgordienko.film_storage.DTO.UserInfoDto;
+import ru.danilgordienko.film_storage.DTO.UsersDto.UserFriendsDto;
+import ru.danilgordienko.film_storage.DTO.UsersDto.UserInfoDto;
 import ru.danilgordienko.film_storage.service.FriendshipService;
 import ru.danilgordienko.film_storage.service.UserService;
 
@@ -26,6 +22,7 @@ public class FriendshipController {
     private final FriendshipService friendshipService;
     private final UserService userService;
 
+    // получение друзей текущего пользователя
     @GetMapping
     public ResponseEntity<UserFriendsDto> getCurrentUserFriends(@AuthenticationPrincipal UserDetails userDetails) {
         log.info("Запрос друзей текущего пользователя: {}", userDetails.getUsername());
@@ -96,6 +93,7 @@ public class FriendshipController {
     public ResponseEntity<List<UserInfoDto>> getIncomingRequests(@AuthenticationPrincipal UserDetails userDetails) {
         log.info("Пользователь {} запрашивает входящие заявки", userDetails.getUsername());
         List<UserInfoDto> requests = friendshipService.getIncomingRequests(userDetails.getUsername());
+        log.info("Входящие заявки для пользователя {} получены, всего:  {}", userDetails.getUsername(), requests.size());
         return ResponseEntity.ok(requests);
     }
 
@@ -104,22 +102,8 @@ public class FriendshipController {
     public ResponseEntity<List<UserInfoDto>> getOutgoingRequests(@AuthenticationPrincipal UserDetails userDetails) {
         log.info("Пользователь {} запрашивает исходящие заявки", userDetails.getUsername());
         List<UserInfoDto> requests = friendshipService.getOutgoingRequests(userDetails.getUsername());
+        log.info("Исходящие заявки для пользователя {} получены, всего:  {}", userDetails.getUsername(), requests.size());
         return ResponseEntity.ok(requests);
-    }
-
-    @GetMapping("/search")
-    public ResponseEntity<List<UserInfoDto>> searchFriends(String query) {
-        log.info("GET /api/friends/search - поиск пользователей по запросу: {}", query);
-
-        List<UserInfoDto> users = userService.searchUserByTitle(query);
-
-        if (users.isEmpty()) {
-            log.warn("По запросу '{}' пользователи не найдены", query);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        }
-
-        log.info("По запросу '{}' найдено {} пользователей", query, users.size());
-        return ResponseEntity.ok(users);
     }
 
 }

@@ -1,21 +1,16 @@
 package ru.danilgordienko.film_storage.service;
 
 
-import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import ru.danilgordienko.film_storage.DTO.UserFriendsDto;
-import ru.danilgordienko.film_storage.DTO.UserInfoDto;
-import ru.danilgordienko.film_storage.DTO.UserRatingDto;
-import ru.danilgordienko.film_storage.DTO.UserRegistrationDTO;
+import ru.danilgordienko.film_storage.DTO.UsersDto.UserFriendsDto;
+import ru.danilgordienko.film_storage.DTO.UsersDto.UserInfoDto;
+import ru.danilgordienko.film_storage.DTO.UsersDto.UserRegistrationDTO;
 import ru.danilgordienko.film_storage.DTO.mapping.UserMapping;
 import ru.danilgordienko.film_storage.model.User;
 import ru.danilgordienko.film_storage.repository.UserRepository;
@@ -24,7 +19,6 @@ import ru.danilgordienko.film_storage.security.UserDetailsImpl;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -35,12 +29,7 @@ public class UserService implements UserDetailsService {
     private UserMapping userMapping;
     private UserSearchRepository  userSearchRepository;
 
-//    @PostConstruct
-//    public void init() {
-//        var movies = userRepository.findAll();
-//        userSearchRepository.saveAll(movies.stream().map(userMapping::toUserDocument).toList());
-//    }
-
+    //загрузка пользователей по username. нужен для spring security для авторизации пользователя
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         log.info("Поиск пользователя по имени: {}", username);
@@ -54,8 +43,9 @@ public class UserService implements UserDetailsService {
         return UserDetailsImpl.build(user);
     }
 
-    public List<UserInfoDto> searchUserByTitle(String query){
-        log.info("Поиск пользователей в Elasticsearch по названию: {}", query);
+    // поиск пользователя по имени из Elasticsearch
+    public List<UserInfoDto> searchUserByUsername(String query){
+        log.info("Поиск пользователей в Elasticsearch по имени: {}", query);
 
         var searchResults = userSearchRepository.searchByUsername(query);
 
@@ -69,6 +59,7 @@ public class UserService implements UserDetailsService {
 
     }
 
+    // регистрация пользователя
     @Transactional
     public void addUser(UserRegistrationDTO user) {
         log.info("Регистрация нового пользователя: {}", user.getUsername());
@@ -79,16 +70,19 @@ public class UserService implements UserDetailsService {
                 .build();
 
         userRepository.save(userToAdd);
+        // так же добавляем в elasticsearch
         userSearchRepository.save(userMapping.toUserDocument(userToAdd));
         log.info("Пользователь '{}' успешно зарегистрирован", user.getUsername());
     }
 
+    // проверяет зарегистрирован ли уже пользователь
     public Boolean existsUser(String username) {
         boolean exists = userRepository.existsByUsername(username);
         log.info("Проверка существования пользователя '{}': {}", username, exists);
         return exists;
     }
 
+    // получение информации о пользователе
     public Optional<UserInfoDto> getUserInfo(Long id){
         log.info("Получение пользователя из бд с ID = {}", id);
         return userRepository.findById(id)
@@ -98,15 +92,7 @@ public class UserService implements UserDetailsService {
                 });
     }
 
-    public Optional<UserRatingDto> getUserRatings(Long id){
-        log.info("Получение пользователя из бд с ID = {}", id);
-        return userRepository.findById(id)
-                .map(user -> {
-                    log.info("Пользователь найден: {}", user.getUsername());
-                    return userMapping.toUserRatingDto(user);
-                });
-    }
-
+    // получение друзей пользователя
     public Optional<UserFriendsDto> getUserFriends(Long id){
         log.info("Получение пользователя из бд с ID = {}", id);
         return userRepository.findById(id)
@@ -116,15 +102,7 @@ public class UserService implements UserDetailsService {
                 });
     }
 
-    public Optional<UserRatingDto> getUserRatingsByUsername(String username){
-        log.info("Получение пользователя {} из бд", username);
-        return userRepository.findByUsername(username)
-                .map(user -> {
-                    log.info("Пользователь найден: {}", user.getUsername());
-                    return userMapping.toUserRatingDto(user);
-                });
-    }
-
+    // получение информации о пользователе по его username
     public Optional<UserInfoDto> getUserInfoByUsername(String username){
         log.info("Получение пользователя {} из бд", username);
         return userRepository.findByUsername(username)
