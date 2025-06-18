@@ -17,7 +17,7 @@ public class MovieDetailsDto {
 
     private List<String> genres;
 
-    private String posterUrl;
+    private String poster;
 
     private List<RatingDto> ratings;
 }

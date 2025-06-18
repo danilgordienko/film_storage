@@ -1,4 +1,4 @@
-package ru.danilgordienko.film_storage.TmdbAPI;
+package ru.danilgordienko.film_storage.MovieAPI;
 
 import lombok.Getter;
 import lombok.Setter;

@@ -18,6 +18,7 @@ import ru.danilgordienko.film_storage.security.JWTAuthenticationFilter;
 import ru.danilgordienko.film_storage.security.JWTCore;
 import ru.danilgordienko.film_storage.service.UserService;
 
+import static org.springframework.security.config.Customizer.withDefaults;
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
 
 @Configuration

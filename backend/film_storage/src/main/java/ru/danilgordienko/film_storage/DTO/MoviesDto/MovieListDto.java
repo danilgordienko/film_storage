@@ -13,7 +13,7 @@ public class MovieListDto {
 
     private Date release_date;
 
-    private String posterUrl;
+    private String poster;
 
     private List<String> genres;
 

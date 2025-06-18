@@ -6,8 +6,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import ru.danilgordienko.film_storage.TmdbAPI.TmdbClient;
-import ru.danilgordienko.film_storage.TmdbAPI.TmdbMovie;
+import ru.danilgordienko.film_storage.MovieAPI.MovieApiClient;
+import ru.danilgordienko.film_storage.MovieAPI.TmdbMovie;
 import ru.danilgordienko.film_storage.model.Genre;
 import ru.danilgordienko.film_storage.model.Movie;
 import ru.danilgordienko.film_storage.repository.GenreRepository;
@@ -17,7 +17,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
@@ -28,7 +27,7 @@ public class MovieServiceTest {
     private MovieService movieService;
 
     @Mock
-    private TmdbClient tmdbClient;
+    private MovieApiClient movieApiClient;
 
     @Mock
     private MovieRepository movieRepository;
@@ -57,7 +56,7 @@ public class MovieServiceTest {
         Genre genre = new Genre();
         genre.setTmdbId(1L);
         genre.setName("Action");
-        when(tmdbClient.getPopularMovies()).thenReturn(List.of(tmdbMovie));
+        when(movieApiClient.getPopularMovies()).thenReturn(List.of(tmdbMovie));
         when(genreRepository.findByTmdbId(1L)).thenReturn(Optional.of(genre));
 
         List<Movie> result = movieService.getPopularMovies();
@@ -70,7 +69,7 @@ public class MovieServiceTest {
 
     @Test
     public void testGetPopularMoviesWhenEmpty() {
-        when(tmdbClient.getPopularMovies()).thenReturn(List.of());
+        when(movieApiClient.getPopularMovies()).thenReturn(List.of());
 
         List<Movie> result = movieService.getPopularMovies();
 

@@ -61,12 +61,15 @@ public class MovieController {
     // получение постера к фильму
     @GetMapping("/{id}/poster")
     public ResponseEntity<byte[]> getMoviePoster(@PathVariable Long id) {
+        log.info("GET /api/movies//{id}/poster - запрос постера фильма с id: {}",id);
         byte[] poster = movieService.getPoster(id);
         if (poster.length != 0) {
+            log.info("Постер фильма с id {} успешно получен", id);
             return ResponseEntity.ok()
                     .contentType(MediaType.IMAGE_JPEG)
                     .body(poster);
         }
+        log.info("Не удалсь получить постер фильма с id {}", id);
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 

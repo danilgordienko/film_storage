@@ -4,20 +4,19 @@ package ru.danilgordienko.film_storage.service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieDetailsDto;
 import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieListDto;
 import ru.danilgordienko.film_storage.DTO.mapping.MovieMapping;
-import ru.danilgordienko.film_storage.TmdbAPI.TmdbClient;
+import ru.danilgordienko.film_storage.MovieAPI.MovieApiClient;
 import ru.danilgordienko.film_storage.model.*;
-import ru.danilgordienko.film_storage.TmdbAPI.TmdbMovie;
 import ru.danilgordienko.film_storage.repository.GenreRepository;
 import ru.danilgordienko.film_storage.repository.MovieRepository;
 import ru.danilgordienko.film_storage.repository.MovieSearchRepository;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,8 +24,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class MovieService {
 
-    private final TmdbClient tmdbClient;
-
+    private final MovieApiClient movieApiClient;
     private final MovieRepository movieRepository;
     private final GenreRepository genreRepository;
     private final MovieMapping  movieMapping;
@@ -34,9 +32,9 @@ public class MovieService {
 
 //    @PostConstruct
 //    public void init() {
-//        //populateMovies();
-//        var movies = movieRepository.findAll();
-//        movieSearchRepository.saveAll(movies.stream().map(movieMapping::toMovieDocument).collect(Collectors.toList()));
+//        populateMovies();
+//        //var movies = movieRepository.findAll();
+//        //movieSearchRepository.saveAll(movies.stream().map(movieMapping::toMovieDocument).collect(Collectors.toList()));
 //    }
 
     // Получение всех фильмов из базы данных
@@ -47,6 +45,14 @@ public class MovieService {
                 .collect(Collectors.toList());
         log.info("Найдено {} фильмов", movies.size());
         return movies;
+    }
+
+    // Получение всех жанров из базы данных
+    private List<Genre> getAllGenres(){
+        log.info("Получение всех фильмов из базы данных");
+        var genres = genreRepository.findAll();
+        log.info("Найдено {} фильмов", genres.size());
+        return genres;
     }
 
     // Получение фильма по ID
@@ -76,89 +82,48 @@ public class MovieService {
 
     public byte[] getPoster(Long id) {
         return movieRepository.findById(id)
-                .map(Movie::getPoster)
+                .map(m -> movieApiClient.downloadPoster(m.getPoster()))
                 .orElse(new byte[0]);
 
     }
 
-    //получение списка фильмов из внешнего api
-    public List<Movie> getPopularMovies() {
-        log.info("Загрузка популярных фильмов из внешнего API...");
-        List<TmdbMovie> tmdbMovies = tmdbClient.getPopularMovies();
+    // приклпляет уже существующий жанр к фильму
+    private void attachGenresToMovies(List<Movie> movies) {
+        Map<Long, Genre> genresMap = getAllGenres().stream()
+                .collect(Collectors.toMap(Genre::getTmdbId, Function.identity()));
 
-        if (tmdbMovies == null || tmdbMovies.isEmpty()) {
-            log.warn("Не удалось получить популярные фильмы или список пуст");
-            return List.of();
-        }
-        log.info("Получено {} фильмов с внешнего API", tmdbMovies.size());
-
-        // Привязка жанров по ID
-        tmdbMovies = tmdbMovies.stream().peek(movie -> {
-            Set<Genre> genres = Optional.ofNullable(movie.getGenreIds())
-                    .orElse(List.of()).stream()
-                    .map(genreRepository::findByTmdbId)
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
+        for (Movie movie : movies) {
+            Set<Genre> attachedGenres = movie.getGenres().stream()
+                    .map(genre -> genresMap.get(genre.getTmdbId()))
+                    .filter(Objects::nonNull)
                     .collect(Collectors.toSet());
-            movie.setGenres(genres);
-        }).toList();
-
-        // Преобразование в модель Movie
-        List<Movie> movies = new ArrayList<>();
-        for (var tmdbMovie : tmdbMovies) {
-            var movie = convertToMovie(tmdbMovie);
-            movies.add(movie);
-            log.debug("Преобразован фильм: {}", movie.getTitle());
+            movie.setGenres(attachedGenres);
         }
-
-        return movies;
     }
 
-
-    // Преобразуем данные TMDb в модель Movie
-    public Movie convertToMovie(TmdbMovie tmdbMovie) {
-        Movie movie = new Movie();
-        movie.setTitle(tmdbMovie.getTitle());
-        movie.setDescription(tmdbMovie.getOverview());
-        // Преобразуем строку "yyyy-MM-dd" в java.util.Date
-        try {
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-            Date releaseDate = dateFormat.parse(tmdbMovie.getReleaseDate());
-            movie.setRelease_date(releaseDate);
-        } catch (ParseException | NullPointerException e) {
-            log.warn("Ошибка парсинга даты фильма '{}': {}", tmdbMovie.getTitle(), tmdbMovie.getReleaseDate());
-            movie.setRelease_date(null);
-        }
-
-        movie.setGenres(tmdbMovie.getGenres());
-
-        // Загружаем постер
-//        if (tmdbMovie.getPosterPath() != null) {
-//            byte[] poster = tmdbClient.downloadPoster(tmdbMovie.getPosterPath());
-//            movie.setPoster(poster);
-//        }
-
-        return movie;
-    }
-
-    // Заполнение базы данных фильмами и жанрами
+    // Заполнение базы данных недавно вышедшими фильмами
     @Transactional
+    @Scheduled(cron = "0 0 0 * * MON")// пополняем раз в неделю
     public void populateMovies() {
-        log.info("Заполнение базы данных жанрами и популярными фильмами...");
-        List<Genre> genres = tmdbClient.loadGenres();
-        genreRepository.saveAll(genres);
-        log.info("Сохранено {} жанров", genres.size());
+        log.info("Получение недавно вышедших фильмов");
+        List<Movie> movies = movieApiClient.getRecentMovies();
+        if (movies.isEmpty()) {
+            log.warn("Фильмы не получены. Не удалось пополнить новые фильмы.");
+            return;
+        }
+        // заменяем пришедшие жанры на уже созданые в бд
+        attachGenresToMovies(movies);
+        log.info("Сохранение фильмов в бд");
+        List<Movie> savedMovies = movieRepository.saveAll(movies);
 
-        List<Movie> movies = getPopularMovies();
-        // Проверяем каждый фильм перед сохранением
-//        movies.forEach(movie -> {
-//            if (movie.getPoster() == null || movie.getPoster().length == 0) {
-//                log.warn("Фильм '{}' не имеет постера, сохраняем как пустой.", movie.getTitle());
-//                movie.setPoster(new byte[0]);  // Убедись, что всегда есть массив байт
-//            }
-//        });
-        movieRepository.saveAll(movies);
-        movieSearchRepository.saveAll(movies.stream().map(movieMapping::toMovieDocument).toList());
+        //если не получилось добавить в бд, то в elastic не сохраняем
+        if (savedMovies.size() != movies.size()) {
+            throw new IllegalStateException("Не все фильмы были сохранены. Откат транзакции.");
+        }
+
+        log.info("Сохранение фильмов в elasticsearch");
+        var savedMoviesEl = movieSearchRepository.saveAll(movies.stream().map(movieMapping::toMovieDocument).toList());
+
         log.info("Сохранено {} фильмов", movies.size());
     }
 

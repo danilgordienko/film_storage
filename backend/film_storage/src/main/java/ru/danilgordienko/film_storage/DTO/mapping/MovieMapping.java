@@ -20,12 +20,12 @@ public interface MovieMapping {
     // из JPA Movie
     @Mapping(target = "genres", expression = "java(mapGenres(movie.getGenres()))")
     @Mapping(target = "rating", expression = "java(calculateAverageRating(movie.getRatings()))")
-    @Mapping(target = "posterUrl", expression = "java(getPosterUrl(movie.getId()))")
+    //@Mapping(target = "poster", expression = "java(getPosterUrl(movie.getId()))")
     @Mapping(target = "id", expression = "java(movie.getId())")
     MovieListDto toMovieListDto(Movie movie);
 
     // из Elasticsearch MovieDocument
-    @Mapping(target = "posterUrl", expression = "java(getPosterUrl(movie.getId()))")
+    //@Mapping(target = "posterUrl", expression = "java(getPosterUrl(movie.getId()))")
     @Mapping(target = "rating", source = "averageRating")
     MovieListDto toMovieListDto(MovieDocument movie);
 
@@ -33,7 +33,7 @@ public interface MovieMapping {
     MovieNameDto toMovieNameDto(Movie movie);
 
     @Mapping(target = "genres", expression = "java(mapGenres(movie.getGenres()))")
-    @Mapping(target = "posterUrl", expression = "java(getPosterUrl(movie.getId()))")
+    //@Mapping(target = "posterUrl", expression = "java(getPosterUrl(movie.getId()))")
     MovieDetailsDto toMovieDetailsDto(Movie movie);
 
     @Mapping(target = "genres", expression = "java(mapGenres(movie.getGenres()))")

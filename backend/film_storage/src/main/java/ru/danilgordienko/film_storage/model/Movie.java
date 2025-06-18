@@ -1,6 +1,7 @@
 package ru.danilgordienko.film_storage.model;
 
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -21,14 +22,14 @@ public class Movie {
 
     private Date release_date;
 
+    @JsonProperty("overview")
     @Column(columnDefinition = "TEXT")
     private String description;
 
     private String title;
 
-    @Lob
-    //@Column(name = "poster", columnDefinition = "BYTEA")
-    private byte[] poster;
+    @JsonProperty("poster_path")
+    private String poster;
 
     @ManyToMany
     @JoinTable(
