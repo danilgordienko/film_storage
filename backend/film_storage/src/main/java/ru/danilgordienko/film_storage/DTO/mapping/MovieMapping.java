@@ -4,6 +4,7 @@ package ru.danilgordienko.film_storage.DTO.mapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieDetailsDto;
+import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieDto;
 import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieListDto;
 import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieNameDto;
 import ru.danilgordienko.film_storage.model.Genre;
@@ -40,6 +41,9 @@ public interface MovieMapping {
     @Mapping(target = "averageRating", expression = "java(calculateAverageRating(movie.getRatings()))")
     MovieDocument toMovieDocument(Movie movie);
 
+    MovieDto toMovieDto(Movie movie);
+
+    Movie toMovie(MovieDto movie);
 
 
     //преобразует жанры в список с названиями жанров

@@ -4,9 +4,11 @@ package ru.danilgordienko.film_storage.service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieDetailsDto;
+import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieDto;
 import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieListDto;
 import ru.danilgordienko.film_storage.DTO.mapping.MovieMapping;
 import ru.danilgordienko.film_storage.MovieAPI.MovieApiClient;
@@ -82,7 +84,10 @@ public class MovieService {
 
     public byte[] getPoster(Long id) {
         return movieRepository.findById(id)
-                .map(m -> movieApiClient.downloadPoster(m.getPoster()))
+                .map(m -> {
+                    log.info("Фильм с id: {} найден, запрос постера", id);
+                    return movieApiClient.downloadPoster(m.getPoster());
+                })
                 .orElse(new byte[0]);
 
     }
@@ -103,18 +108,19 @@ public class MovieService {
 
     // Заполнение базы данных недавно вышедшими фильмами
     @Transactional
-    @Scheduled(cron = "0 0 0 * * MON")// пополняем раз в неделю
-    public void populateMovies() {
+    //@RabbitListener(queues = "movies.queue")
+    public void populateMovies(List<MovieDto> movies) {
         log.info("Получение недавно вышедших фильмов");
-        List<Movie> movies = movieApiClient.getRecentMovies();
+        //List<Movie> movies = movieApiClient.getRecentMovies();
         if (movies.isEmpty()) {
             log.warn("Фильмы не получены. Не удалось пополнить новые фильмы.");
             return;
         }
         // заменяем пришедшие жанры на уже созданые в бд
-        attachGenresToMovies(movies);
+        var mappedMovies = movies.stream().map(movieMapping::toMovie).toList();
+        attachGenresToMovies(mappedMovies);
         log.info("Сохранение фильмов в бд");
-        List<Movie> savedMovies = movieRepository.saveAll(movies);
+        List<Movie> savedMovies = movieRepository.saveAll(mappedMovies);
 
         //если не получилось добавить в бд, то в elastic не сохраняем
         if (savedMovies.size() != movies.size()) {
@@ -122,7 +128,7 @@ public class MovieService {
         }
 
         log.info("Сохранение фильмов в elasticsearch");
-        var savedMoviesEl = movieSearchRepository.saveAll(movies.stream().map(movieMapping::toMovieDocument).toList());
+        var savedMoviesEl = movieSearchRepository.saveAll(mappedMovies.stream().map(movieMapping::toMovieDocument).toList());
 
         log.info("Сохранено {} фильмов", movies.size());
     }

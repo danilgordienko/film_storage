@@ -4,12 +4,15 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import ru.danilgordienko.film_fetcher.config.RabbitConfig;
 import ru.danilgordienko.film_fetcher.model.TmdbMovie;
 import ru.danilgordienko.film_fetcher.model.TmdbResponse;
 import ru.danilgordienko.film_fetcher.model.Genre;
@@ -31,6 +34,8 @@ public class TmdbService {
     private final WebClient webClient;
     private Map<Long, Genre> genres = new HashMap<>();
 
+    private final RabbitTemplate rabbitTemplate;
+
     private String getGenreUrl() {
         return "https://api.themoviedb.org/3/genre/movie/list?api_key=" + API_KEY + "&language=ru-RU";
     }
@@ -50,8 +55,24 @@ public class TmdbService {
                 "&vote_average.gte=6";
     }
 
+    private void sendMovies(List<TmdbMovie> movies) {
+        log.info("Sending movies");
+        rabbitTemplate.convertAndSend(
+                RabbitConfig.EXCHANGE,
+                RabbitConfig.ROUTING_KEY,
+                movies
+        );
+    }
+
+    @Scheduled(cron = "0 0 3 * * MON")
+    public void populateMovies(){
+        getPopularMovies()
+                .doOnNext(this::sendMovies)
+                .subscribe();
+    }
 
     public Mono<List<TmdbMovie>> getPopularMovies() {
+        log.info("Getting popular movies");
         loadGenres();
         return webClient.get()
                 .uri(getMovieUrl())

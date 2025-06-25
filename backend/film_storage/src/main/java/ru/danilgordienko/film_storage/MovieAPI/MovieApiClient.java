@@ -2,6 +2,7 @@ package ru.danilgordienko.film_storage.MovieAPI;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +18,7 @@ import java.util.List;
 @Slf4j
 public class MovieApiClient {
 
-    private String API_BASE_URL = "http://localhost:8082/api/tmdb";
+    private final String API_BASE_URL = "http://localhost:8082/api/tmdb";
 
     private final RestTemplate restTemplate;
 
@@ -38,7 +39,6 @@ public class MovieApiClient {
 
     public List<Movie> getPopularMovies() {
         try {
-
             ResponseEntity<List<Movie>> response = restTemplate.exchange(
                     getMovieUrl(),
                     HttpMethod.GET,
@@ -85,6 +85,7 @@ public class MovieApiClient {
     }
 
     public byte[] downloadPoster(String posterPath) {
+        log.info("Получение постера с url: {}", posterPath);
         if (posterPath == null || posterPath.isBlank()) {
             return new byte[0];
         }

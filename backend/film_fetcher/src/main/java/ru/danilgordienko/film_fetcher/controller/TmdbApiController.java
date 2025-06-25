@@ -32,6 +32,11 @@ public class TmdbApiController {
         return tmdbService.getPopularMovies();
     }
 
+    @PostMapping("/movies/send/popular")
+    public void populateMovies() {
+        tmdbService.populateMovies();
+    }
+
     @GetMapping("/movies/recent")
     public Mono<List<TmdbMovie>> getRecentMovies() {
         return tmdbService.getRecentlyReleasedMovies(7);
@@ -39,6 +44,7 @@ public class TmdbApiController {
 
     @GetMapping(value = "/posters/{posterPath}", produces = MediaType.IMAGE_JPEG_VALUE)
     public Mono<ResponseEntity<byte[]>> downloadPoster(@PathVariable String posterPath) {
+        log.info("Downloading image from {}", posterPath);
         return tmdbService.downloadPoster(posterPath)
                 .map(bytes -> {
                     if (bytes.length > 0) {

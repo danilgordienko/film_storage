@@ -2,6 +2,7 @@ package ru.danilgordienko.film_storage.service;
 
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -60,6 +61,7 @@ public class FavoriteService {
         return true;
     }
 
+    @Transactional
     public boolean removeFavorite(Long id, String username) {
         log.info("Удаление фильма из избранного. Пользователь: {}, Фильм ID: {}", username, id);
 
