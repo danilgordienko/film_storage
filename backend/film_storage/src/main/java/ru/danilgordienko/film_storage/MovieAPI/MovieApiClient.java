@@ -85,13 +85,12 @@ public class MovieApiClient {
     }
 
     public byte[] downloadPoster(String posterPath) {
-        log.info("Получение постера с url: {}", posterPath);
         if (posterPath == null || posterPath.isBlank()) {
             return new byte[0];
         }
 
         String imageUrl = API_BASE_URL + "/posters/" + posterPath;
-        log.info("Fetching poster from: {}", imageUrl);
+        log.info("Получение постера с url: {}", imageUrl);
 
         try {
             ResponseEntity<byte[]> response = restTemplate.getForEntity(

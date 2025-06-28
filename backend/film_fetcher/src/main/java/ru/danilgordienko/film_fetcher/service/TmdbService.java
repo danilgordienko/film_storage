@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -65,10 +66,16 @@ public class TmdbService {
     }
 
     @Scheduled(cron = "0 0 3 * * MON")
+    //@Scheduled(cron = "0 * * * * *")
     public void populateMovies(){
         getPopularMovies()
                 .doOnNext(this::sendMovies)
                 .subscribe();
+    }
+
+    @RabbitListener(queues = RabbitConfig.POSTER_QUEUE)
+    public byte[] handlePosterRequest(String posterPath) {
+        return downloadPoster(posterPath).block();
     }
 
     public Mono<List<TmdbMovie>> getPopularMovies() {

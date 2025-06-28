@@ -1,7 +1,8 @@
-package ru.danilgordienko.film_fetcher.config;
+package ru.danilgordienko.film_storage.config;
 
 
 import org.springframework.amqp.core.*;
+import org.springframework.amqp.rabbit.AsyncRabbitTemplate;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
@@ -12,10 +13,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitConfig {
     public static final String QUEUE = "movies.queue";
+    public static final String POSTER_QUEUE = "movies.poster.queue";
     public static final String EXCHANGE = "movies.exchange";
     public static final String ROUTING_KEY = "movies.key";
-
-    public static final String POSTER_QUEUE = "movies.poster.queue";
     public static final String ROUTING_KEY_POSTER = "movies.poster.key";
 
     @Bean
@@ -24,23 +24,23 @@ public class RabbitConfig {
     }
 
     @Bean
-    public Queue posterQueue() {
-        return new Queue(POSTER_QUEUE, false);
-    }
-
-    @Bean
     public DirectExchange exchange() {
         return new DirectExchange(EXCHANGE);
     }
 
     @Bean
-    public Binding binding(Queue queue, DirectExchange exchange) {
-        return BindingBuilder.bind(queue).to(exchange).with(ROUTING_KEY);
+    public Queue posterQueue() {
+        return new Queue(POSTER_QUEUE, false);
     }
 
     @Bean
-    public Binding posterBinding(Queue posterQueue, DirectExchange exchange) {
-        return BindingBuilder.bind(posterQueue).to(exchange).with(ROUTING_KEY_POSTER);
+    public Binding posterBinding(DirectExchange exchange) {
+        return BindingBuilder.bind(posterQueue()).to(exchange).with(ROUTING_KEY_POSTER);
+    }
+
+    @Bean
+    public Binding binding(Queue queue, DirectExchange exchange) {
+        return BindingBuilder.bind(queue).to(exchange).with(ROUTING_KEY);
     }
 
     @Bean
