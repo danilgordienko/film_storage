@@ -1,5 +1,7 @@
 package ru.danilgordienko.film_storage.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -16,4 +18,7 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
 
     @EntityGraph(attributePaths = {"genres", "ratings"})
     List<Movie> findAll();
+
+    @EntityGraph(attributePaths = {"genres", "ratings"})
+    Page<Movie> findAll(Pageable pageable);
 }

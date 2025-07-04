@@ -3,6 +3,7 @@ package ru.danilgordienko.film_storage.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -22,11 +23,11 @@ public class MovieController {
     private final MovieService movieService;
 
     /**
-     * получение списка фильмов
+     * получение списка всех фильмов
      */
-    @GetMapping
+    @GetMapping("/all")
     public ResponseEntity<List<MovieListDto>> getAllMovies(){
-        log.info("GET /api/movies - fetching all movies");
+        log.info("GET /api/movies/all - fetching all movies");
 
         List<MovieListDto> movies = movieService.getAllMovies();
 
@@ -36,6 +37,24 @@ public class MovieController {
         }
 
         log.info("Returning {} movies", movies.size());
+        return ResponseEntity.ok(movies);
+    }
+
+    /**
+     * получение списка фильмов по страницам
+     */
+    @GetMapping
+    public ResponseEntity<Page<MovieListDto>> getMoviesPage(@RequestParam("page") int page){
+        log.info("GET /api/movies - fetching page of movies");
+
+        Page<MovieListDto> movies = movieService.getMoviesPage(page);
+
+        if (movies.getContent().isEmpty()) {
+            log.warn("No movies found");
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+
+        log.info("Returning {} movies", movies.getContent().size());
         return ResponseEntity.ok(movies);
     }
 
@@ -73,10 +92,10 @@ public class MovieController {
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
-    // поиск фильмов по запросу query
-    @GetMapping("/search")
+    // поиск всех фильмов по запросу query
+    @GetMapping("/search/all")
     public ResponseEntity<List<MovieListDto>> searchMovies(@RequestParam("query") String query) {
-        log.info("GET /api/movies/search - поиск фильмов по запросу: {}", query);
+        log.info("GET /api/movies/search/all - поиск всех фильмов по запросу: {}", query);
 
         List<MovieListDto> movies = movieService.searchMoviesByTitle(query);
 
@@ -87,6 +106,34 @@ public class MovieController {
 
         log.info("По запросу '{}' найдено {} фильмов", query, movies.size());
         return ResponseEntity.ok(movies);
+    }
+
+    // поиск фильмов по запросу query по страницам
+    @GetMapping("/search")
+    public ResponseEntity<Page<MovieListDto>> searchMovies(@RequestParam("query") String query,
+                                                           @RequestParam("page") int page) {
+        log.info("GET /api/movies/search - поиск фильмов по запросу: {}", query);
+
+        Page<MovieListDto> movies = movieService.searchMoviesPageByTitle(query, page);
+
+        if (movies.getContent().isEmpty()) {
+            log.warn("По запросу '{}' фильмы не найдены", query);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+
+        log.info("По запросу '{}' найдено {} фильмов", query, movies.getContent().size());
+        return ResponseEntity.ok(movies);
+    }
+
+    @PostMapping("/init")
+    public ResponseEntity<String> initMovies(){
+        log.info("POST /api/movies/init - начальное заполнение фильмов");
+        if (!movieService.getPopularMovies()) {
+            log.warn("Не удалось добавить фильмы");
+            return ResponseEntity.badRequest().build();
+        }
+        log.info("Фильмы успешно добавлены");
+        return  ResponseEntity.ok().build();
     }
 
 }
