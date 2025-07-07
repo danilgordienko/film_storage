@@ -1,17 +1,22 @@
 package ru.danilgordienko.film_storage.service;
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieDetailsDto;
 import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieDto;
+import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieListCacheDto;
 import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieListDto;
+import ru.danilgordienko.film_storage.DTO.PageDto;
 import ru.danilgordienko.film_storage.DTO.mapping.MovieMapping;
 import ru.danilgordienko.film_storage.MovieAPI.MovieApiClient;
 import ru.danilgordienko.film_storage.config.RabbitConfig;
@@ -20,6 +25,7 @@ import ru.danilgordienko.film_storage.repository.GenreRepository;
 import ru.danilgordienko.film_storage.repository.MovieRepository;
 import ru.danilgordienko.film_storage.repository.MovieSearchRepository;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -28,6 +34,7 @@ import java.util.stream.StreamSupport;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@EnableCaching
 public class MovieService {
 
     private final MovieRepository movieRepository;
@@ -48,21 +55,22 @@ public class MovieService {
     }
 
     // Получение всех фильмов из базы данных
-    public Page<MovieListDto> getMoviesPage(int page){
+    @Cacheable(value = "movies", key = "#page", condition = "#page == 0")
+    public PageDto getMoviesPage(int page){
         log.info("Получение всех фильмов из базы данных");
         Pageable pageable = PageRequest.of(page, size, Sort.by("title").ascending());
         Page<Movie> moviePage = movieRepository.findAll(pageable);
 
         // Преобразуем содержимое страницы
-        List<MovieListDto> dtoList = moviePage.getContent()
+        List<MovieListCacheDto> dtoList = moviePage.getContent()
                 .stream()
-                .map(movieMapping::toMovieListDto)
+                .map(movieMapping::toMovieListCacheDto)
                 .toList();
 
         // Возвращаем новую страницу с теми же параметрами
-        Page<MovieListDto> dtoPage = new PageImpl<>(dtoList, pageable, moviePage.getTotalElements());
+        Page<MovieListCacheDto> dtoPage = new PageImpl<>(dtoList, pageable, moviePage.getTotalElements());
         log.info("Найдено {} фильмов", dtoList.size());
-        return dtoPage;
+        return movieMapping.toPageDto(dtoPage);
     }
 
     // Получение всех жанров из базы данных
@@ -117,6 +125,7 @@ public class MovieService {
     }
 
     // получение постера к фильму(отпправляет запрос брокеру и ждет ответа)
+    @Cacheable(value = "movies", key = "#id", cacheManager = "binaryCacheManager")
     public byte[] getPoster(Long id) {
         return movieRepository.findById(id)
         .map(movie -> {
@@ -161,7 +170,7 @@ public class MovieService {
         }
     }
 
-    // получение постера к фильму(отпправляет запрос брокеру и ждет ответа)
+    // заполнение бд фильмами по страницам(пока недоделан)
     @Transactional
     public boolean getPopularMovies() {
 
@@ -189,8 +198,6 @@ public class MovieService {
         saveReceivedMovies(movies);
         return true;
     }
-
-
 
     @Transactional
     protected void saveReceivedMovies(List<MovieDto> movies) {

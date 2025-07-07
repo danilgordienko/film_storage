@@ -3,10 +3,9 @@ package ru.danilgordienko.film_storage.DTO.mapping;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieDetailsDto;
-import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieDto;
-import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieListDto;
-import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieNameDto;
+import org.springframework.data.domain.Page;
+import ru.danilgordienko.film_storage.DTO.MoviesDto.*;
+import ru.danilgordienko.film_storage.DTO.PageDto;
 import ru.danilgordienko.film_storage.model.Genre;
 import ru.danilgordienko.film_storage.model.Movie;
 import ru.danilgordienko.film_storage.model.MovieDocument;
@@ -24,6 +23,11 @@ public interface MovieMapping {
     //@Mapping(target = "poster", expression = "java(getPosterUrl(movie.getId()))")
     @Mapping(target = "id", expression = "java(movie.getId())")
     MovieListDto toMovieListDto(Movie movie);
+
+    @Mapping(target = "genres", expression = "java(mapGenres(movie.getGenres()))")
+    @Mapping(target = "rating", expression = "java(calculateAverageRating(movie.getRatings()))")
+    @Mapping(target = "id", expression = "java(movie.getId())")
+    MovieListCacheDto toMovieListCacheDto(Movie movie);
 
     // из Elasticsearch MovieDocument
     //@Mapping(target = "posterUrl", expression = "java(getPosterUrl(movie.getId()))")
@@ -44,6 +48,8 @@ public interface MovieMapping {
     MovieDto toMovieDto(Movie movie);
 
     Movie toMovie(MovieDto movie);
+
+    PageDto toPageDto(Page<MovieListCacheDto> movie);
 
 
     //преобразует жанры в список с названиями жанров

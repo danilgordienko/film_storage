@@ -14,9 +14,13 @@ import org.springframework.context.annotation.Configuration;
 public class RabbitConfig {
     public static final String QUEUE = "movies.queue";
     public static final String POSTER_QUEUE = "movies.poster.queue";
+    public static final String MOVIES_PAGE_QUEUE = "movies.page.queue";
+
     public static final String EXCHANGE = "movies.exchange";
+
     public static final String ROUTING_KEY = "movies.key";
     public static final String ROUTING_KEY_POSTER = "movies.poster.key";
+    public static final String ROUTING_KEY_PAGE = "movies.page.key";
 
     @Bean
     public Queue queue() {
@@ -34,8 +38,18 @@ public class RabbitConfig {
     }
 
     @Bean
+    public Queue moviesPageQueue() {
+        return new Queue(MOVIES_PAGE_QUEUE, false);
+    }
+
+    @Bean
     public Binding posterBinding(DirectExchange exchange) {
         return BindingBuilder.bind(posterQueue()).to(exchange).with(ROUTING_KEY_POSTER);
+    }
+
+    @Bean
+    public Binding moviesPageBinding(DirectExchange exchange) {
+        return BindingBuilder.bind(moviesPageQueue()).to(exchange).with(ROUTING_KEY_PAGE);
     }
 
     @Bean

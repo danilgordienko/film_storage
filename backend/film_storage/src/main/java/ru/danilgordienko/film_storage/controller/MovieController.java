@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieDetailsDto;
 import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieListDto;
+import ru.danilgordienko.film_storage.DTO.PageDto;
 import ru.danilgordienko.film_storage.service.MovieService;
 
 import java.util.List;
@@ -44,10 +45,10 @@ public class MovieController {
      * получение списка фильмов по страницам
      */
     @GetMapping
-    public ResponseEntity<Page<MovieListDto>> getMoviesPage(@RequestParam("page") int page){
+    public ResponseEntity<PageDto> getMoviesPage(@RequestParam("page") int page){
         log.info("GET /api/movies - fetching page of movies");
 
-        Page<MovieListDto> movies = movieService.getMoviesPage(page);
+        PageDto movies = movieService.getMoviesPage(page);
 
         if (movies.getContent().isEmpty()) {
             log.warn("No movies found");
