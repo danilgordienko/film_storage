@@ -1,0 +1,71 @@
+.app-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  background-color: #222;
+  color: #fff;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  z-index: 1000;
+}
+
+.nav-left, .nav-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.nav-link {
+  color: #ddd;
+  text-decoration: none;
+  font-size: 16px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.nav-link:hover {
+  background-color: #444;
+  color: #fff;
+}
+
+.active {
+  background-color: #007bff;
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Уменьшаем отступ между профилем и аватаром */
+.profile-link {
+  margin-right: 4px; /* было 8px */
+}
+
+.avatar-link {
+  display: flex;
+  align-items: center;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #007bff;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.avatar:hover {
+  transform: scale(1.05);
+}
+
+/* Чтобы основной контент не прятался под фиксированным хэдером, добавь отступ сверху для всего содержимого */
+body {
+  padding-top: 56px; /* равен высоте .app-header */
+}

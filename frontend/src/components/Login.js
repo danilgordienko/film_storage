@@ -3,16 +3,16 @@ import { Link, useNavigate } from 'react-router-dom';
 import '../styles/Auth.css';
 
 
-const Register = () => {
+const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
-  const handleRegister = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
 
     try {
-      const response = await fetch('http://localhost:8081/api/auth/register', {
+      const response = await fetch('http://localhost:8081/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -26,8 +26,9 @@ const Register = () => {
         return;
       }
 
-      alert('Регистрация успешна. Теперь вы можете войти.');
-      navigate('/login');
+      const token = await response.text();
+      localStorage.setItem('token', token);
+      navigate('/movies');
     } catch (err) {
       alert('Ошибка соединения с сервером');
     }
@@ -35,8 +36,8 @@ const Register = () => {
 
   return (
     <div className="auth-container">
-      <h2>Регистрация</h2>
-      <form onSubmit={handleRegister}>
+      <h2>Вход</h2>
+      <form onSubmit={handleLogin}>
         <input
           type="text"
           placeholder="Имя пользователя"
@@ -51,11 +52,11 @@ const Register = () => {
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-        <button type="submit">Зарегистрироваться</button>
+        <button type="submit">Войти</button>
       </form>
-      <p>Уже есть аккаунт? <Link to="/login">Войдите</Link></p>
+      <p>Нет аккаунта? <Link to="/register">Зарегистрируйтесь</Link></p>
     </div>
   );
 };
 
-export default Register;
+export default Login;
