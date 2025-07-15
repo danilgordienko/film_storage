@@ -81,7 +81,7 @@ public class MovieController {
     // получение постера к фильму
     @GetMapping("/{id}/poster")
     public ResponseEntity<byte[]> getMoviePoster(@PathVariable Long id) {
-        log.info("GET /api/movies//{id}/poster - запрос постера фильма с id: {}",id);
+        log.info("GET /api/movies/{id}/poster - запрос постера фильма с id: {}",id);
         byte[] poster = movieService.getPoster(id);
         if (poster.length != 0) {
             log.info("Постер фильма с id {} успешно получен", id);
@@ -111,11 +111,11 @@ public class MovieController {
 
     // поиск фильмов по запросу query по страницам
     @GetMapping("/search")
-    public ResponseEntity<Page<MovieListDto>> searchMovies(@RequestParam("query") String query,
+    public ResponseEntity<PageDto> searchMovies(@RequestParam("query") String query,
                                                            @RequestParam("page") int page) {
         log.info("GET /api/movies/search - поиск фильмов по запросу: {}", query);
 
-        Page<MovieListDto> movies = movieService.searchMoviesPageByTitle(query, page);
+        PageDto movies = movieService.searchMoviesPageByTitle(query, page);
 
         if (movies.getContent().isEmpty()) {
             log.warn("По запросу '{}' фильмы не найдены", query);

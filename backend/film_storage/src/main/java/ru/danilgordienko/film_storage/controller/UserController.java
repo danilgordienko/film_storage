@@ -6,10 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import ru.danilgordienko.film_storage.DTO.UsersDto.UserFriendsDto;
 import ru.danilgordienko.film_storage.DTO.UsersDto.UserInfoDto;
 import ru.danilgordienko.film_storage.service.UserService;
@@ -68,7 +65,7 @@ public class UserController {
 
     // поиск пользователя по запросу query
     @GetMapping("/search")
-    public ResponseEntity<List<UserInfoDto>> searchUsers(String query) {
+    public ResponseEntity<List<UserInfoDto>> searchUsers(@RequestParam String query) {
         log.info("GET /api/users/search - поиск пользователей по запросу: {}", query);
 
         List<UserInfoDto> users = userService.searchUserByUsername(query);

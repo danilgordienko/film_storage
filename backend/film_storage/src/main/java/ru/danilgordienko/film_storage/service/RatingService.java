@@ -1,13 +1,20 @@
 package ru.danilgordienko.film_storage.service;
 
+import co.elastic.clients.elasticsearch._types.ElasticsearchException;
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.boot.MappingException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
 import ru.danilgordienko.film_storage.DTO.RatingDto;
 import ru.danilgordienko.film_storage.DTO.UsersDto.UserRatingDto;
 import ru.danilgordienko.film_storage.DTO.mapping.UserMapping;
 import ru.danilgordienko.film_storage.model.Movie;
 import ru.danilgordienko.film_storage.model.Rating;
+import ru.danilgordienko.film_storage.model.User;
 import ru.danilgordienko.film_storage.repository.MovieRepository;
 import ru.danilgordienko.film_storage.repository.MovieSearchRepository;
 import ru.danilgordienko.film_storage.repository.RatingRepository;
@@ -26,53 +33,61 @@ public class RatingService {
     private final MovieRepository movieRepository;
     private final MovieSearchRepository  movieSearchRepository;
     private final UserMapping  userMapping;
+    private final UserService userService;
+    private final MovieService movieService;
 
 
     //добавляем рейтинг к фильму
+    @Transactional
     public boolean addRating(Long id, RatingDto rating, String username)
     {
-        var user = userRepository.findByUsername(username);
-        var movie = movieRepository.findById(id);
+        try {
+            var user = userService.getUserByUsername(username);
+            var movie = movieService.getMovieById(id);
 
-        if (user.isEmpty()){
-            log.warn("Пользователь с именем '{}' не найден", username);
+
+            if (ratingRepository.existsByUserAndMovie(user, movie)) {
+                log.warn("Отзыв не добавлен: пользователь с именем '{}' уже оставлял отзыв ", username);
+                return false;
+            }
+
+            Rating rate = Rating.builder()
+                    .movie(movie)
+                    .user(user)
+                    .rating(rating.getRating())
+                    .comment(rating.getComment())
+                    .build();
+
+            ratingRepository.save(rate);
+            // Обновляем среднюю оценку
+            // В случае если вознкнет ошибка транзакция откатится
+            updateAverageRatingInElasticsearch(movie);
+            return true;
+        } catch (DataAccessException e ) {
+            log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
+            return false;
+        } catch(EntityNotFoundException e) {
             return false;
         }
-        if (movie.isEmpty()){
-            log.warn("Фильм с ID '{}' не найден", id);
-            return false;
-        }
-
-        if (ratingRepository.existsByUserAndMovie(user.get(), movie.get())){
-            log.warn("Отзыв не добавлен: пользователь с именем '{}' уже оставлял отзыв ", username);
-            return false;
-        }
-
-        Rating rate = Rating.builder()
-                .movie(movie.get())
-                .user(user.get())
-                .rating(rating.getRating())
-                .comment(rating.getComment())
-                .build();
-
-        ratingRepository.save(rate);
-        log.info("Рейтинг успешно добавлен. Пользователь: {}, Фильм: {}, Оценка: {}",
-                user.get().getUsername(), movie.get().getTitle(), rate.getRating());
-
-        // Обновляем среднюю оценку
-        updateAverageRatingInElasticsearch(movie.get());
-        return true;
     }
 
     // обноляет среднюю оценку у фильма в Elasticsearch
     private void updateAverageRatingInElasticsearch(Movie movie) {
-        double avgRating = calculateAverageRating(movie);
+        try {
+            double avgRating = calculateAverageRating(movie);
 
-        movieSearchRepository.findById(movie.getId()).ifPresent(movieDoc -> {
-            movieDoc.setAverageRating(avgRating);
-            movieSearchRepository.save(movieDoc);
-            log.info("Средняя оценка обновлена в Elasticsearch: {}", avgRating);
-        });
+            movieSearchRepository.findById(movie.getId()).ifPresent(movieDoc -> {
+                movieDoc.setAverageRating(avgRating);
+                movieSearchRepository.save(movieDoc);
+                log.info("Средняя оценка обновлена в Elasticsearch: {}", avgRating);
+            });
+        } catch (ElasticsearchException | RestClientException e) {
+            log.error("Ошибка подключения к Elasticsearch: {}", e.getMessage(), e);
+            throw e;
+        } catch (Exception e) {
+            log.error("Непредвиденная ошибка при обнолении оценки: {}", e.getMessage(), e);
+            throw new RuntimeException("", e);
+        }
     }
 
     // считает среднуюю оценку фильма
@@ -86,21 +101,35 @@ public class RatingService {
                 .orElse(0.0);
     }
 
+    // получение оценка пользователя по username
     public Optional<UserRatingDto> getUserRatingsByUsername(String username){
-        log.info("Получение пользователя {} из бд", username);
-        return userRepository.findByUsername(username)
-                .map(user -> {
-                    log.info("Пользователь найден: {}", user.getUsername());
-                    return userMapping.toUserRatingDto(user);
-                });
+        try {
+            User user = userService.getUserByUsername(username);
+            return Optional.of(userMapping.toUserRatingDto(user));
+        } catch (DataAccessException | EntityNotFoundException e ) {
+            return Optional.empty();
+        } catch(MappingException e) {
+            log.error("Ошибка при маппинге {}", e.getMessage(), e);
+            return Optional.empty();
+        } catch (Exception e) {
+            log.error("Непредвиденная ошибка при добавлении избранного: {}", e.getMessage(), e);
+            return Optional.empty();
+        }
     }
 
+    // получение оценка пользователя по id
     public Optional<UserRatingDto> getUserRatings(Long id){
-        log.info("Получение пользователя из бд с ID = {}", id);
-        return userRepository.findById(id)
-                .map(user -> {
-                    log.info("Пользователь найден: {}", user.getUsername());
-                    return userMapping.toUserRatingDto(user);
-                });
+        try {
+            User user = userService.getUserById(id);
+            return Optional.of(userMapping.toUserRatingDto(user));
+        } catch (DataAccessException | EntityNotFoundException e ) {
+            return Optional.empty();
+        } catch(MappingException e) {
+            log.error("Ошибка при маппинге {}", e.getMessage(), e);
+            return Optional.empty();
+        } catch (Exception e) {
+            log.error("Непредвиденная ошибка при добавлении избранного: {}", e.getMessage(), e);
+            return Optional.empty();
+        }
     }
 }

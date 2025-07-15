@@ -1,17 +1,24 @@
 package ru.danilgordienko.film_storage.service;
 
 
+import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.context.event.EventListener;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.*;
+import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
 import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieDetailsDto;
 import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieDto;
 import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieListCacheDto;
@@ -41,102 +48,173 @@ public class MovieService {
     private final GenreRepository genreRepository;
     private final MovieMapping  movieMapping;
     private final MovieSearchRepository movieSearchRepository;
-    private final RabbitTemplate rabbitTemplate;
+    private final MovieApiClient movieApiClient;
     private final int size = 20;
 
     // Получение всех фильмов из базы данных
     public List<MovieListDto> getAllMovies(){
-        log.info("Получение всех фильмов из базы данных");
-        var movies = movieRepository.findAll().stream()
-                .map(movieMapping::toMovieListDto)
-                .toList();
-        log.info("Найдено {} фильмов", movies.size());
-        return movies;
+        try {
+            var movies = movieRepository.findAll().stream()
+                    .map(movieMapping::toMovieListDto)
+                    .toList();
+            log.info("Найдено {} фильмов", movies.size());
+            return movies;
+        } catch (DataAccessException e) {
+            log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
+            return List.of();
+        } catch (Exception e) {
+            log.error("Непредвиденная ошибка при получении фильмов: {}", e.getMessage(), e);
+            return List.of();
+        }
     }
 
     // Получение всех фильмов из базы данных
     @Cacheable(value = "movies", key = "#page", condition = "#page == 0")
     public PageDto getMoviesPage(int page){
-        log.info("Получение всех фильмов из базы данных");
-        Pageable pageable = PageRequest.of(page, size, Sort.by("title").ascending());
-        Page<Movie> moviePage = movieRepository.findAll(pageable);
+        try {
+            if (page < 0) {
+                log.warn("Попытка получения страницы < 0: {}", page);
+            }
+            log.info("Получение всех фильмов из базы данных");
+            Pageable pageable = PageRequest.of(page, size, Sort.by("title").ascending());
+            Page<Movie> moviePage = movieRepository.findAll(pageable);
 
-        // Преобразуем содержимое страницы
-        List<MovieListCacheDto> dtoList = moviePage.getContent()
-                .stream()
-                .map(movieMapping::toMovieListCacheDto)
-                .toList();
+            // Преобразуем содержимое страницы
+            List<MovieListCacheDto> dtoList = moviePage.getContent()
+                    .stream()
+                    .map(movieMapping::toMovieListCacheDto)
+                    .toList();
 
-        // Возвращаем новую страницу с теми же параметрами
-        Page<MovieListCacheDto> dtoPage = new PageImpl<>(dtoList, pageable, moviePage.getTotalElements());
-        log.info("Найдено {} фильмов", dtoList.size());
-        return movieMapping.toPageDto(dtoPage);
+            // Возвращаем новую страницу с теми же параметрами
+            Page<MovieListCacheDto> dtoPage = new PageImpl<>(dtoList, pageable, moviePage.getTotalElements());
+            log.info("Найдено {} фильмов", dtoList.size());
+            return movieMapping.toPageDto(dtoPage);
+        } catch (DataAccessException e) {
+            log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
+            return new PageDto(List.of(), 0, 0);
+        } catch (Exception e) {
+            log.error("Непредвиденная ошибка при получении страницы фильмов: {}", e.getMessage(), e);
+            return new PageDto(List.of(), 0, 0);
+        }
     }
 
     // Получение всех жанров из базы данных
     private List<Genre> getAllGenres(){
-        log.info("Получение всех жанров из базы данных");
-        var genres = genreRepository.findAll();
-        log.info("Найдено {} фильмов", genres.size());
-        return genres;
+        try {
+            log.info("Получение всех жанров из базы данных");
+            var genres = genreRepository.findAll();
+            log.info("Найдено {} жанров", genres.size());
+            return genres;
+        } catch (DataAccessException e) {
+            log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
+            return List.of();
+        } catch (Exception e) {
+            log.error("Непредвиденная ошибка при жанров фильмов: {}", e.getMessage(), e);
+            return List.of();
+        }
     }
 
     // Получение фильма по ID
     public Optional<MovieDetailsDto> getMovie(Long id) {
-        log.info("Получение фильма с ID = {}", id);
-        return movieRepository.findById(id)
-                .map(movie -> {
-                    log.info("Фильм найден: {}", movie.getTitle());
-                    return movieMapping.toMovieDetailsDto(movie);
-                });
+        try {
+            var movie = getMovieById(id);
+            return Optional.of(movieMapping.toMovieDetailsDto(movie));
+        }catch (DataAccessException | EntityNotFoundException e) {
+            log.error(e.getMessage(), e);
+            return Optional.empty();
+        } catch (Exception e) {
+            log.error("Непредвиденная ошибка при получении фильма: {}", e.getMessage(), e);
+            return Optional.empty();
+        }
+    }
+
+    // Получение фильма по ID
+    public Movie getMovieById(Long id) {
+        try {
+            log.info("Получение фильма с ID = {}", id);
+            Movie movie = movieRepository.findById(id)
+                    .orElseThrow(() -> new EntityNotFoundException("Фильм с id " + id + " не найден"));
+            log.info("Фильм найден: {}", movie.getTitle());
+            return movie;
+        } catch (DataAccessException e) {
+            log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
+            throw e;
+        } catch (Exception e) {
+            log.error("Непредвиденная ошибка при получении фильма: {}", e.getMessage(), e);
+            throw new RuntimeException("Внутренняя ошибка при получении фильма", e);
+        }
     }
 
     //Поиск фильмов по запросу query
     public List<MovieListDto> searchMoviesByTitle(String query) {
-        log.info("Поиск фильмов в Elasticsearch по названию: {}", query);
+        try {
+            log.info("Поиск фильмов в Elasticsearch по названию: {}", query);
 
-        var searchResults = movieSearchRepository.searchByTitle(query);
+            if (query == null || query.isBlank()) {
+                log.warn("Пустой или null запрос на поиск фильмов");
+                return List.of();
+            }
+            var searchResults = movieSearchRepository.searchByTitle(query);
 
-        var movies = searchResults.stream()
-                .map(movieMapping::toMovieListDto)
-                .toList();
+            var movies = searchResults.stream()
+                    .map(movieMapping::toMovieListDto)
+                    .toList();
 
-        log.info("Найдено {} фильмов в Elasticsearch по запросу '{}'", movies.size(), query);
+            log.info("Найдено {} фильмов в Elasticsearch по запросу '{}'", movies.size(), query);
 
-        return movies;
+            return movies;
+        } catch (ElasticsearchException | RestClientException e) {
+            log.error("Ошибка подключения к Elasticsearch: {}", e.getMessage(), e);
+            return List.of();
+        } catch (Exception e) {
+            log.error("Ошибка при поиске в Elasticsearch: {}", e.getMessage(), e);
+            return  List.of();
+        }
     }
 
     //Поиск фильмов по запросу query
-    public Page<MovieListDto> searchMoviesPageByTitle(String query,  int page) {
-        log.info("Поиск фильмов в Elasticsearch по названию: {}", query);
-        Pageable pageable = PageRequest.of(page, size, Sort.by("title").ascending());
-        var searchResults = movieSearchRepository.findByTitleContaining(query, pageable);
+    public PageDto searchMoviesPageByTitle(String query,  int page) {
+        try {
+            log.info("Поиск фильмов в Elasticsearch по названию: {}", query);
+            Pageable pageable = PageRequest.of(page, size);
+            var searchResults = movieSearchRepository.findByTitleContaining(query, pageable);
 
-        // Преобразуем содержимое страницы
-        List<MovieListDto> dtoList = searchResults.getContent()
-                .stream()
-                .map(movieMapping::toMovieListDto)
-                .toList();
+            // Преобразуем содержимое страницы
+            List<MovieListDto> dtoList = searchResults.getContent()
+                    .stream()
+                    .map(movieMapping::toMovieListDto)
+                    .toList();
 
-        // Возвращаем новую страницу с теми же параметрами
-        Page<MovieListDto> dtoPage = new PageImpl<>(dtoList, pageable, searchResults.getTotalElements());
-        log.info("Найдено {} фильмов", dtoList.size());
-        return dtoPage;
+            // Возвращаем новую страницу с теми же параметрами
+            Page<MovieListDto> dtoPage = new PageImpl<>(dtoList, pageable, searchResults.getTotalElements());
+            log.info("Найдено {} фильмов", dtoList.size());
+            return movieMapping.toMovieListPageDto(dtoPage);
+        } catch (ElasticsearchException | RestClientException e) {
+            log.error("Ошибка подключения к Elasticsearch: {}", e.getMessage(), e);
+            return new PageDto(List.of(), 0, 0);
+        } catch (Exception e) {
+            log.error("Ошибка при поиске в Elasticsearch: {}", e.getMessage(), e);
+            return new PageDto(List.of(), 0, 0);
+        }
     }
 
     // получение постера к фильму(отпправляет запрос брокеру и ждет ответа)
     @Cacheable(value = "movies", key = "#id", cacheManager = "binaryCacheManager")
     public byte[] getPoster(Long id) {
-        return movieRepository.findById(id)
-        .map(movie -> {
-            log.info("Фильм с id: {} найден, запрос постера", id);
-            return (byte[]) rabbitTemplate.convertSendAndReceive(
-                    RabbitConfig.EXCHANGE,
-                    RabbitConfig.ROUTING_KEY_POSTER,
-                    movie.getPoster()
-            );
-        })
-        .orElse(new byte[0]);
+        try {
+            return movieRepository.findById(id)
+                    .map(movie -> {
+                        log.info("Фильм с id: {} найден", id);
+                        return movieApiClient.getPoster(movie);
+                    })
+                    .orElse(new byte[0]);
+        } catch (DataAccessException e) {
+            log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
+            return new byte[0];
+        } catch (Exception e) {
+            log.error("Непредвиденная ошибка при получении постера: {}", e.getMessage(), e);
+            return new byte[0];
+        }
     }
 
     // приклпляет уже существующий жанр к фильму
@@ -153,70 +231,46 @@ public class MovieService {
         }
     }
 
-    private Object getRabbitResponse(String exchange, String routingKey, Object body) {
-        log.info("Запрос к RabbitMQ с телом: {}", body.toString());
-        try {
-            return rabbitTemplate.convertSendAndReceive(
-                    exchange,
-                    routingKey,
-                    body
-            );
-        } catch (AmqpException e) {
-            log.error("Ошибка при работе с RabbitMQ: {}", e.getMessage(), e);
-            return null;
-        } catch (ClassCastException e) {
-            log.error("Ошибка преобразования ответа: {}", e.getMessage(), e);
-            return null;
-        }
-    }
-
     // заполнение бд фильмами по страницам(пока недоделан)
     @Transactional
     public boolean getPopularMovies() {
 
         int page = 1;
-        Object response = getRabbitResponse(
-                RabbitConfig.EXCHANGE,
-                RabbitConfig.ROUTING_KEY_PAGE,
-                page
-        );
-
-        if (response == null) {
-            log.warn("Ответ от сервиса фильмов не получен");
-            return false;
-        }
-
-        List<MovieDto> movies;
-        try {
-            movies = (List<MovieDto>) response;
-        } catch (ClassCastException e) {
-            log.error("Ошибка приведения типов: {}", e.getMessage());
-            return false;
-        }
+        var movies = movieApiClient.getPopularMoviesPage(page);
 
         log.info("Получено {} фильмов", movies.size());
         saveReceivedMovies(movies);
         return true;
     }
 
-    @Transactional
-    protected void saveReceivedMovies(List<MovieDto> movies) {
-        var mappedMovies = movies.stream().map(movieMapping::toMovie).toList();
-        // заменяем пришедшие жанры на уже созданые в бд
-        attachGenresToMovies(mappedMovies);
-        // сохраняем в бд
-        saveMoviesDB(mappedMovies);
-        // сохраняем в elasticsearch
-        saveMoviesES(mappedMovies);
+    // cохранение фильмов в elastic и бд
+    private void saveReceivedMovies(List<MovieDto> movies) {
+        try {
+            var mappedMovies = movies.stream().map(movieMapping::toMovie).toList();
+            // заменяем пришедшие жанры на уже созданые в бд
+            attachGenresToMovies(mappedMovies);
+            // сохраняем в бд
+            saveMoviesDB(mappedMovies);
+            // сохраняем в elasticsearch
+            saveMoviesES(mappedMovies);
 
-        log.info("Сохранено {} фильмов", movies.size());
+            log.info("Сохранено {} фильмов", movies.size());
+            // пробрасываем все ошибки дальше, чтоб транзакция откатилась
+        } catch (ElasticsearchException | RestClientException | DataAccessException | IllegalStateException e) {
+            log.error("Ошибка при сохранении фильмов", e);
+            throw e;
+        } catch (RuntimeException e) {
+            log.error("Непредвиденная ошибка при получении постера: {}", e.getMessage(), e);
+            throw e;
+        }
     }
 
     // Заполнение базы данных недавно вышедшими фильмами
     @Transactional
-    @RabbitListener(queues = "movies.queue")
-    public void populateMovies(List<MovieDto> movies) {
-        log.info("Получение недавно вышедших фильмов");
+    @EventListener(MovieApiClient.MoviesReceivedEvent .class)
+    public void populateMovies(MovieApiClient.MoviesReceivedEvent event) {
+        log.info("Сохранение недавно вышедших фильмов");
+        List<MovieDto> movies = event.getMovies();
         saveReceivedMovies(movies);
     }
 

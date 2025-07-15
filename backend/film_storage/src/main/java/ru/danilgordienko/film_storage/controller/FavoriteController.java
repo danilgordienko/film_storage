@@ -29,7 +29,7 @@ public class FavoriteController {
         log.info("Запрос на добавление фильма в избранное: id={}", id);
         try {
             if(!favoriteService.addFavorite(id, userDetails.getUsername())) {
-                log.warn("Ошибка при добавлении фильма в избранное: id={}", id);
+                log.warn("Не удалось добавить фильм в избранное: id={}", id);
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
             }
             log.info("Фильм успешно добавлен в избранное: id={}", id);
@@ -61,6 +61,7 @@ public class FavoriteController {
         }
     }
 
+    //получение избранного текущего пользователя
     @GetMapping
     public ResponseEntity<UserFavoritesDto> getCurrentUserFavorites(@AuthenticationPrincipal UserDetails userDetails) {
         log.info("Запрос избранного текущего пользователя: {}", userDetails.getUsername());
@@ -68,7 +69,7 @@ public class FavoriteController {
         return favoriteService.getUserFavoritesByUsername(userDetails.getUsername())
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> {
-                    log.warn("Избранное пользователя {} не найдены", userDetails.getUsername());
+                    log.warn("Не удалось получить избранное пользователя {}", userDetails.getUsername());
                     return ResponseEntity.notFound().build();
                 });
     }

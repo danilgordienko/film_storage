@@ -1,8 +1,11 @@
 package ru.danilgordienko.film_storage.service;
 
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.boot.MappingException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import ru.danilgordienko.film_storage.DTO.UsersDto.UserFriendsDto;
 import ru.danilgordienko.film_storage.DTO.UsersDto.UserInfoDto;
@@ -21,62 +24,75 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class FriendshipService {
 
-    private final UserRepository userRepository;
     private final UserMapping  userMapping;
     private final FriendRequestRepository friendRequestRepository;
+    private final UserService userService;
 
 
     //получение друзей текущего пользователя
     public Optional<UserFriendsDto> getCurrentUserFriends(String username) {
-        log.info("Получение пользователя {} из бд", username);
-        return userRepository.findByUsername(username)
-                .map(user -> {
-                    log.info("Пользователь найден: {}", user.getUsername());
-                    return userMapping.toUserFriendsDto(user);
-                });
+        try {
+            User user = userService.getUserByUsername(username);
+            return Optional.of(userMapping.toUserFriendsDto(user));
+        } catch (DataAccessException | EntityNotFoundException e ) {
+            return Optional.empty();
+        } catch(MappingException e) {
+            log.error("Ошибка при маппинге {}", e.getMessage(), e);
+            return Optional.empty();
+        } catch (Exception e) {
+            log.error("Непредвиденная ошибка: {}", e.getMessage(), e);
+            return Optional.empty();
+        }
     }
 
     //получение друзей пользователя по id
     public Optional<UserFriendsDto> getUserFriends(Long id){
-        log.info("Получение пользователя из бд с ID = {}", id);
-        return userRepository.findById(id)
-                .map(user -> {
-                    log.info("Пользователь найден: {}", user.getUsername());
-                    return userMapping.toUserFriendsDto(user);
-                });
+        try {
+            User user = userService.getUserById(id);
+            return Optional.of(userMapping.toUserFriendsDto(user));
+        } catch (DataAccessException | EntityNotFoundException e ) {
+            return Optional.empty();
+        } catch(MappingException e) {
+            log.error("Ошибка при маппинге {}", e.getMessage(), e);
+            return Optional.empty();
+        } catch (Exception e) {
+            log.error("Непредвиденная ошибка: {}", e.getMessage(), e);
+            return Optional.empty();
+        }
     }
 
     //отправка заявки в друзья от текущего пользователя к пользователю с targetId
     public boolean sendFriendRequest(String username, Long targetId) {
-        var sender = getUserByUsername(username);
-        var reciever = getUserById(targetId);
+        try {
+            var sender = userService.getUserByUsername(username);
+            var reciever = userService.getUserById(targetId);
 
-        if (sender.isEmpty() || reciever.isEmpty()) {
+            if (sender.equals(reciever)) {
+                log.warn("Отправитель и получатель совпадают: '{}' ", username);
+                return false;
+            }
+            friendRequestRepository.save(FriendRequest.builder()
+                    .sender(sender)
+                    .receiver(reciever)
+                    .build());
+            log.info("Заявка в друзья от пользователя {} пользователю с id: {} успешно отправлена", username, targetId);
+            return true;
+        } catch (DataAccessException | EntityNotFoundException e ) {
+            return false;
+        } catch (Exception e) {
+            log.error("Непредвиденная ошибка: {}", e.getMessage(), e);
             return false;
         }
-        if (sender.equals(reciever)) {
-            log.warn("Отправитель и получатель совпадают: '{}' ", username);
-            return false;
-        }
-        friendRequestRepository.save(FriendRequest.builder()
-                .sender(sender.get())
-                .receiver(reciever.get())
-                .build());
-        log.info("Заявка в друзья от пользователя {} пользователю с id: {} успешно отправлена",  username, targetId);
-        return true;
 
     }
 
     //принятие заявки в друзья от пользователю с requesterId
     @Transactional
     public boolean acceptFriendRequest(String username, Long requesterId) {
-        var reciever = getUserByUsername(username);
-        var sender = getUserById(requesterId);
+        var sender = userService.getUserByUsername(username);
+        var reciever = userService.getUserById(requesterId);
 
-        if (sender.isEmpty() || reciever.isEmpty()) {
-            return false;
-        }
-        var request = friendRequestRepository.findBySenderAndReceiver(sender.get(), reciever.get());
+        var request = friendRequestRepository.findBySenderAndReceiver(sender, reciever);
 
         if (request.isEmpty()){
             return false;
@@ -85,81 +101,82 @@ public class FriendshipService {
         friendRequestRepository.delete(request.get());
 
         // Cохраняем друга с обеих сторон
-        sender.get().getFriends().add(reciever.get());
-        reciever.get().getFriends().add(sender.get());
-        userRepository.save(sender.get());
-        userRepository.save(reciever.get());
+        sender.getFriends().add(reciever);
+        reciever.getFriends().add(sender);
+        userService.saveUser(sender);
+        userService.saveUser(reciever);
         return true;
-    }
-
-    private Optional<User> getUserByUsername(String username) {
-        var userWithUsername = userRepository.findByUsername(username);
-        if (userWithUsername.isEmpty()){
-            log.warn("Пользователь '{}' не найден", username);
-            return Optional.empty();
-        }
-        return userWithUsername;
-    }
-
-    private Optional<User> getUserById(Long id) {
-        var user = userRepository.findById(id);
-        if (user.isEmpty()){
-            log.warn("Пользователь c '{}' не найден", id);
-            return Optional.empty();
-        }
-        return user;
     }
 
     //отклонение заявки в друзья от пользователю с requesterId
+    @Transactional
     public boolean declineFriendRequest(String username, Long requesterId) {
-        var reciever = getUserByUsername(username);
-        var sender = getUserById(requesterId);
+        try {
+            var sender = userService.getUserByUsername(username);
+            var reciever = userService.getUserById(requesterId);
 
-        if (sender.isEmpty() || reciever.isEmpty()) {
+            var request = friendRequestRepository.findBySenderAndReceiver(sender, reciever);
+
+            if (request.isEmpty()) {
+                return false;
+            }
+            // Удаляем запрос
+            friendRequestRepository.delete(request.get());
+            return true;
+        } catch (DataAccessException | EntityNotFoundException e ) {
+            return false;
+        } catch (Exception e) {
+            log.error("Непредвиденная ошибка: {}", e.getMessage(), e);
             return false;
         }
-        var request = friendRequestRepository.findBySenderAndReceiver(sender.get(), reciever.get());
-
-        if (request.isEmpty()){
-            return false;
-        }
-        // Удаляем запрос
-        friendRequestRepository.delete(request.get());
-        return true;
     }
 
     // удаление пользователя из друзей
     @Transactional
     public boolean removeFriend(String username, Long friendId) {
-        var sender = getUserByUsername(username);
-        var reciever = getUserById(friendId);
-
-        if (sender.isEmpty() || reciever.isEmpty()) {
-            return false;
-        }
+        var sender = userService.getUserByUsername(username);
+        var reciever = userService.getUserById(friendId);
 
         // удаляем с обеих сторон
-        sender.get().getFriends().remove(reciever.get());
-        reciever.get().getFriends().remove(sender.get());
-        userRepository.save(sender.get());
-        userRepository.save(reciever.get());
+        sender.getFriends().remove(reciever);
+        reciever.getFriends().remove(sender);
+        userService.saveUser(sender);
+        userService.saveUser(reciever);
         return true;
     }
 
     // получение входящих запросов в друзья для текущего пользователя
     public List<UserInfoDto> getIncomingRequests(String username) {
-        return getUserByUsername(username)
-                .map(user -> friendRequestRepository.findByReceiver(user)
-                        .stream().map(r -> userMapping.toUserInfoDto(r.getSender())).toList())
-                .orElseGet(List::of); //если пользователь не найден то возвращаем пустой список
+        try {
+            User user = userService.getUserByUsername(username);
+            return friendRequestRepository.findByReceiver(user)
+                    .stream().map(r -> userMapping.toUserInfoDto(r.getSender())).toList();
+        }catch(MappingException e) {
+            log.error("Ошибка при маппинге {}", e.getMessage(), e);
+            return List.of();
+        } catch (DataAccessException | EntityNotFoundException e ) {
+            return List.of();
+        } catch (Exception e) {
+            log.error("Непредвиденная ошибка: {}", e.getMessage(), e);
+            return List.of();
+        }
     }
 
     // получение отправленных запросов от текущего пользователя
     public List<UserInfoDto> getOutgoingRequests(String username) {
-        return getUserByUsername(username)
-                .map(user -> friendRequestRepository.findBySender(user)
-                        .stream().map(r -> userMapping.toUserInfoDto(r.getReceiver())).toList())
-                .orElseGet(List::of); //если пользователь не найден то возвращаем пустой список
+        try {
+            User user = userService.getUserByUsername(username);
+            return friendRequestRepository.findBySender(user)
+                    .stream().map(r -> userMapping.toUserInfoDto(r.getReceiver())).toList();
+        }catch(MappingException e) {
+            log.error("Ошибка при маппинге {}", e.getMessage(), e);
+            return List.of();
+        } catch (DataAccessException | EntityNotFoundException e ) {
+            return List.of();
+        } catch (Exception e) {
+            log.error("Непредвиденная ошибка: {}", e.getMessage(), e);
+            return List.of();
+        }
     }
 
 

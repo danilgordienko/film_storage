@@ -51,6 +51,8 @@ public interface MovieMapping {
 
     PageDto toPageDto(Page<MovieListCacheDto> movie);
 
+    PageDto toMovieListPageDto(Page<MovieListDto> movie);
+
 
     //преобразует жанры в список с названиями жанров
     default List<String> mapGenres(Set<Genre> genres) {
