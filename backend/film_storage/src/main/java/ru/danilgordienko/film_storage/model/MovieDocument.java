@@ -15,7 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 public class MovieDocument {
     private Long id;
-    
+
     private String title;
 
     private Date release_date;
