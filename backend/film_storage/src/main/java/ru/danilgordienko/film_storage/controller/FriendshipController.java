@@ -26,13 +26,9 @@ public class FriendshipController {
     @GetMapping
     public ResponseEntity<UserFriendsDto> getCurrentUserFriends(@AuthenticationPrincipal UserDetails userDetails) {
         log.info("Запрос друзей текущего пользователя: {}", userDetails.getUsername());
-
-        return friendshipService.getCurrentUserFriends(userDetails.getUsername())
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> {
-                    log.warn("Друзья пользователя с username: {} не найдены", userDetails.getUsername());
-                    return ResponseEntity.notFound().build();
-                });
+        UserFriendsDto friends = friendshipService.getCurrentUserFriends(userDetails.getUsername());
+        log.info("Друзья пользователя {} получены", userDetails.getUsername());
+        return ResponseEntity.ok(friends);
     }
 
     // Отправить заявку в друзья
@@ -40,12 +36,8 @@ public class FriendshipController {
     public ResponseEntity<Void> sendFriendRequest(@AuthenticationPrincipal UserDetails userDetails,
                                                   @PathVariable Long targetId) {
         log.info("Запрос от пользователя {} на отправку заявки в друзья пользователю с id: {}", userDetails.getUsername(), targetId);
-
-        if(!friendshipService.sendFriendRequest(userDetails.getUsername(), targetId)){
-            log.warn("Ошибка при отправке заявки пользователя {} в друзья пользователю с id: {}", userDetails.getUsername(), targetId);
-            return ResponseEntity.badRequest().build();
-        }
-
+        friendshipService.sendFriendRequest(userDetails.getUsername(), targetId);
+        log.info("Пользователь {} успешно отправил заявку пользователю с id: {}", userDetails.getUsername(), targetId);
         return ResponseEntity.ok().build();
     }
 
@@ -54,10 +46,7 @@ public class FriendshipController {
     public ResponseEntity<Void> acceptFriendRequest(@AuthenticationPrincipal UserDetails userDetails,
                                                     @PathVariable Long requesterId) {
         log.info("Запрос пользователя {} на принятие заявки от пользователя с id: {}", userDetails.getUsername(), requesterId);
-        if(!friendshipService.acceptFriendRequest(userDetails.getUsername(), requesterId)){
-            log.warn("Не удалось принять заявку пользователю {}  от пользователя с id: {}", userDetails.getUsername(), requesterId);
-            return  ResponseEntity.badRequest().build();
-        }
+        friendshipService.acceptFriendRequest(userDetails.getUsername(), requesterId);
         log.info("Пользователь {} успешно принял заявку от пользователя с id: {}", userDetails.getUsername(), requesterId);
         return ResponseEntity.ok().build();
     }
@@ -67,10 +56,7 @@ public class FriendshipController {
     public ResponseEntity<Void> declineFriendRequest(@AuthenticationPrincipal UserDetails userDetails,
                                                      @PathVariable Long requesterId) {
         log.info("Запрос пользователя {} на отклонение заявки от пользователя с id: {}", userDetails.getUsername(), requesterId);
-        if(!friendshipService.declineFriendRequest(userDetails.getUsername(), requesterId)){
-            log.warn("Не удалось отклонить заявку пользователю {}  от пользователя с id: {}", userDetails.getUsername(), requesterId);
-            return  ResponseEntity.badRequest().build();
-        }
+        friendshipService.declineFriendRequest(userDetails.getUsername(), requesterId);
         log.info("Пользователь {} успешно отклонил заявку от пользователя с id: {}", userDetails.getUsername(), requesterId);
         return ResponseEntity.ok().build();
     }
@@ -80,10 +66,7 @@ public class FriendshipController {
     public ResponseEntity<Void> removeFriend(@AuthenticationPrincipal UserDetails userDetails,
                                              @PathVariable Long friendId) {
         log.info("Запрос пользователя {} на удаление из друзей пользователя с id: {}", userDetails.getUsername(), friendId);
-        if(!friendshipService.removeFriend(userDetails.getUsername(), friendId)){
-            log.warn("Пользователю {} не удалось удалить из друзей пользователя с id: {}", userDetails.getUsername(), friendId);
-            return  ResponseEntity.badRequest().build();
-        }
+        friendshipService.removeFriend(userDetails.getUsername(), friendId);
         log.info("Пользователь {} успешно удалил из друзей пользователя с id: {}", userDetails.getUsername(), friendId);
         return ResponseEntity.ok().build();
     }

@@ -27,17 +27,9 @@ public class FavoriteController {
     public ResponseEntity<String> addFavorite(@PathVariable Long id,
                                               @AuthenticationPrincipal UserDetails userDetails){
         log.info("Запрос на добавление фильма в избранное: id={}", id);
-        try {
-            if(!favoriteService.addFavorite(id, userDetails.getUsername())) {
-                log.warn("Не удалось добавить фильм в избранное: id={}", id);
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-            }
-            log.info("Фильм успешно добавлен в избранное: id={}", id);
-            return ResponseEntity.ok("Favorite added");
-        } catch (Exception e) {
-            log.error("Ошибка сервера при добавлении фильма в избранное: id={}, error={}", id, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Ошибка сервера");
-        }
+        favoriteService.addFavorite(id, userDetails.getUsername());
+        log.info("Фильм успешно добавлен в избранное: id={}", id);
+        return ResponseEntity.ok("Favorite added");
     }
 
     /**
@@ -47,31 +39,18 @@ public class FavoriteController {
     public ResponseEntity<String> deleteFavorite(@PathVariable Long id,
                                                  @AuthenticationPrincipal UserDetails userDetails){
         log.info("Запрос на удаление фильма из избранного: id={}", id);
-        try {
-            if (!favoriteService.removeFavorite(id,  userDetails.getUsername())) {
-                log.warn("Ошибка при удалении фильма из избранного: id={}", id);
-                return ResponseEntity.badRequest().build();
-            }
-
-            log.info("Фильм успешно удалён из избранного: id={}", id);
-            return ResponseEntity.ok("Favorite delete");
-        } catch (Exception e) {
-            log.error("Ошибка сервера при удалении фильма из избранного: id={}, error={}", id, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Ошибка сервера");
-        }
+        favoriteService.removeFavorite(id,  userDetails.getUsername());
+        log.info("Фильм успешно удалён из избранного: id={}", id);
+        return ResponseEntity.ok("Favorite delete");
     }
 
     //получение избранного текущего пользователя
     @GetMapping
     public ResponseEntity<UserFavoritesDto> getCurrentUserFavorites(@AuthenticationPrincipal UserDetails userDetails) {
         log.info("Запрос избранного текущего пользователя: {}", userDetails.getUsername());
-
-        return favoriteService.getUserFavoritesByUsername(userDetails.getUsername())
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> {
-                    log.warn("Не удалось получить избранное пользователя {}", userDetails.getUsername());
-                    return ResponseEntity.notFound().build();
-                });
+        UserFavoritesDto  userFavoritesDto = favoriteService.getUserFavoritesByUsername(userDetails.getUsername());
+        log.info("избранное текущего пользователя {} успешно полученно", userDetails.getUsername());
+        return ResponseEntity.ok(userFavoritesDto);
     }
 
 }

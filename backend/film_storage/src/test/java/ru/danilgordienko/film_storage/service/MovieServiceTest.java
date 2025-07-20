@@ -7,7 +7,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.danilgordienko.film_storage.MovieAPI.MovieApiClient;
-import ru.danilgordienko.film_storage.MovieAPI.TmdbMovie;
 import ru.danilgordienko.film_storage.model.Genre;
 import ru.danilgordienko.film_storage.model.Movie;
 import ru.danilgordienko.film_storage.repository.GenreRepository;

@@ -17,6 +17,10 @@ import ru.danilgordienko.film_storage.DTO.UsersDto.UserFriendsDto;
 import ru.danilgordienko.film_storage.DTO.UsersDto.UserInfoDto;
 import ru.danilgordienko.film_storage.DTO.UsersDto.UserRegistrationDTO;
 import ru.danilgordienko.film_storage.DTO.mapping.UserMapping;
+import ru.danilgordienko.film_storage.exception.DatabaseConnectionException;
+import ru.danilgordienko.film_storage.exception.ElasticsearchConnectionException;
+import ru.danilgordienko.film_storage.exception.UserNotFoundException;
+import ru.danilgordienko.film_storage.exception.UserRegistrationException;
 import ru.danilgordienko.film_storage.model.User;
 import ru.danilgordienko.film_storage.repository.UserRepository;
 import ru.danilgordienko.film_storage.repository.UserSearchRepository;
@@ -52,40 +56,29 @@ public class UserService implements UserDetailsService {
     public User getUserByUsername(String username) {
         try {
             log.info("Поиск пользователя по имени: {}", username);
-            User user = userRepository.findByUsername(username)
+            return userRepository.findByUsername(username)
                     .orElseThrow(() -> {
                         log.warn("Пользователь '{}' не найден", username);
-                        return new EntityNotFoundException(username + " not found");
+                        return new UserNotFoundException("Пользователь с именем " + username + " не найден");
                     });
-            log.info("Пользователь {} найден",  username);
-            return user;
         } catch (DataAccessException e) {
             log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
-            throw e;
-        } catch (Exception e) {
-            log.error("Непредвиденная ошибка при получении пользователя: {}", e.getMessage(), e);
-            throw new RuntimeException("Внутренняя ошибка при получении пользователя", e);
+            throw new DatabaseConnectionException("Ошибка подключения к базе данных", e);
         }
     }
 
-    //получение пользователей по username.
+    //получение пользователей по id.
     public User getUserById(Long id) {
         try {
             log.info("Получение пользователя из бд с ID = {}", id);
             return userRepository.findById(id)
-                    .map(user -> {
-                        log.info("Пользователь найден: {}", user.getUsername());
-                        return user;
-                    }).orElseThrow(() -> {
+                    .orElseThrow(() -> {
                         log.warn("Пользователь c id '{}' не найден", id);
-                        return new EntityNotFoundException(id + " not found");
+                        return new UserNotFoundException("Пользователь c id " + id + " не найден");
                     });
         } catch (DataAccessException e) {
-            log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
-            throw e;
-        } catch (Exception e) {
-            log.error("Непредвиденная ошибка при получении пользователя: {}", e.getMessage(), e);
-            throw new RuntimeException("Внутренняя ошибка при получении пользователя", e);
+            log.error("Ошибка подключения к БД при поиске по ID", e);
+            throw new DatabaseConnectionException("Не удалось получить пользователя из БД", e);
         }
     }
 
@@ -103,15 +96,9 @@ public class UserService implements UserDetailsService {
             log.info("Найдено {} пользователей в Elasticsearch по запросу '{}'", users.size(), query);
 
             return users;
-        } catch (DataAccessException | EntityNotFoundException e) {
-            log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
-            return List.of();
-        } catch(MappingException e) {
-            log.error("Ошибка при маппинге {}", e.getMessage(), e);
-            return List.of();
-        } catch (Exception e) {
-            log.error("Непредвиденная ошибка при получении пользователя: {}", e.getMessage(), e);
-            return List.of();
+        } catch (ElasticsearchException | RestClientException e) {
+            log.error("Ошибка при работе с Elasticsearch", e);
+            throw new ElasticsearchConnectionException("Не удалось найти пользователя в Elasticsearch", e);
         }
     }
 
@@ -120,29 +107,25 @@ public class UserService implements UserDetailsService {
     public boolean addUser(UserRegistrationDTO user) {
         try {
             log.info("Регистрация нового пользователя: {}", user.getUsername());
-
             User userToAdd = User.builder()
                     .username(user.getUsername())
                     .password(user.getPassword())
                     .build();
 
             userRepository.save(userToAdd);
-            // так же добавляем в elasticsearch
             userSearchRepository.save(userMapping.toUserDocument(userToAdd));
+
             log.info("Пользователь '{}' успешно зарегистрирован", user.getUsername());
             return true;
-        } catch (DataAccessException | EntityNotFoundException e) {
-            log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
-            return false;
-        }catch (ElasticsearchException | RestClientException e) {
-            log.error("Ошибка подключения к Elasticsearch: {}", e.getMessage(), e);
-            return false;
-        } catch(MappingException e) {
-            log.error("Ошибка при маппинге {}", e.getMessage(), e);
-            return false;
+        } catch (DataAccessException e) {
+            log.error("Ошибка сохранения в БД", e);
+            throw new DatabaseConnectionException("Не удалось сохранить пользователя в БД", e);
+        } catch (ElasticsearchException | RestClientException e) {
+            log.error("Ошибка при сохранении в Elasticsearch", e);
+            throw new ElasticsearchConnectionException("Не удалось сохранить пользователя в Elasticsearch", e);
         } catch (Exception e) {
-            log.error("Непредвиденная ошибка при получении пользователя: {}", e.getMessage(), e);
-            return false;
+            log.error("Ошибка регистрации пользователя", e);
+            throw new UserRegistrationException("Непредвиденная ошибка при регистрации", e);
         }
     }
 
@@ -151,11 +134,8 @@ public class UserService implements UserDetailsService {
         try {
             userRepository.save(user);
         } catch (DataAccessException e) {
-            log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
-            throw e;
-        } catch (Exception e) {
-            log.error("Непредвиденная ошибка при добавлении пользователя: {}", e.getMessage(), e);
-            throw new RuntimeException("Внутренняя ошибка при добавлении пользователя", e);
+            log.error("Ошибка сохранения в БД", e);
+            throw new DatabaseConnectionException("Не удалось сохранить пользователя в БД", e);
         }
     }
 
@@ -165,64 +145,32 @@ public class UserService implements UserDetailsService {
             boolean exists = userRepository.existsByUsername(username);
             log.info("Проверка существования пользователя '{}': {}", username, exists);
             return exists;
-        } catch (DataAccessException | EntityNotFoundException e) {
-            log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
-            return false;
-        } catch (Exception e) {
-            log.error("Непредвиденная ошибка при получении пользователя: {}", e.getMessage(), e);
-            return false;
+        } catch (DataAccessException e) {
+            log.error("Ошибка сохранения в БД", e);
+            throw new DatabaseConnectionException("Не удалось сохранить пользователя в БД", e);
         }
     }
 
     // получение информации о пользователе
-    public Optional<UserInfoDto> getUserInfo(Long id){
-        try {
-            User user = getUserById(id);
-            return Optional.of(userMapping.toUserInfoDto(user));
-        } catch (DataAccessException | EntityNotFoundException e) {
-            log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
-            return Optional.empty();
-        } catch(MappingException e) {
-            log.error("Ошибка при маппинге {}", e.getMessage(), e);
-            return Optional.empty();
-        } catch (Exception e) {
-            log.error("Непредвиденная ошибка при получении пользователя: {}", e.getMessage(), e);
-            return Optional.empty();
-        }
+    public UserInfoDto getUserInfo(Long id) {
+        User user = getUserById(id);
+        return userMapping.toUserInfoDto(user);
     }
+
 
     // получение друзей пользователя
-    public Optional<UserFriendsDto> getUserFriends(Long id){
-        try {
-            User user = getUserById(id);
-            return Optional.of(userMapping.toUserFriendsDto(user));
-        } catch (DataAccessException | EntityNotFoundException e) {
-            log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
-            return Optional.empty();
-        } catch(MappingException e) {
-            log.error("Ошибка при маппинге {}", e.getMessage(), e);
-            return Optional.empty();
-        } catch (Exception e) {
-            log.error("Непредвиденная ошибка при получении пользователя: {}", e.getMessage(), e);
-            return Optional.empty();
-        }
+    public UserFriendsDto getUserFriends(Long id) {
+        User user = getUserById(id);
+        return userMapping.toUserFriendsDto(user);
     }
 
+
     // получение информации о пользователе по его username
-    public Optional<UserInfoDto> getUserInfoByUsername(String username){
-        try {
-            User user = getUserByUsername(username);
-            return Optional.of(userMapping.toUserInfoDto(user));
-        } catch (DataAccessException | EntityNotFoundException e) {
-            log.error(e.getMessage(), e);
-            return Optional.empty();
-        } catch(MappingException e) {
-            log.error("Ошибка при маппинге {}", e.getMessage(), e);
-            return Optional.empty();
-        } catch (Exception e) {
-            return Optional.empty();
-        }
+    public UserInfoDto getUserInfoByUsername(String username){
+        User user = getUserByUsername(username);
+        return userMapping.toUserInfoDto(user);
     }
+
 
 
 }

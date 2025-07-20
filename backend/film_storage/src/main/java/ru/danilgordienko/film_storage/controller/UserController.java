@@ -21,46 +21,35 @@ public class UserController {
 
     private final UserService userService;
 
+    // получение инфо пользователя по id
     @GetMapping("/{id}/info")
-    public ResponseEntity<UserInfoDto> getUserInfo(@PathVariable Long id){
+    public ResponseEntity<UserInfoDto> getUserInfo(@PathVariable Long id) {
         log.info("Запрос данных о пользователе с id: {}", id);
 
-        return userService.getUserInfo(id)
-                .map(user -> {
-                    log.info("Пользователь {} найден", user.getUsername());
-                    return ResponseEntity.ok(user);
-                })
-                .orElseGet(() -> {
-                    log.warn("Пользователь с id: {} не найден", id);
-                    return  ResponseEntity.notFound().build();
-                });
+        UserInfoDto userInfoDto = userService.getUserInfo(id);
+        log.info("Пользователь {} найден", userInfoDto.getUsername());
+
+        return ResponseEntity.ok(userInfoDto);
     }
 
+    // получение друзей пользователя по id
     @GetMapping("/{id}/friends")
-    public ResponseEntity<UserFriendsDto> getUserFriends(@PathVariable Long id){
+    public ResponseEntity<UserFriendsDto> getUserFriends(@PathVariable Long id) {
         log.info("Запрос друзей пользователя с id: {}", id);
 
-        return userService.getUserFriends(id)
-                .map(user -> {
-                    log.info("Пользователь найден, всего друзей: {}", user.getFriends().size());
-                    return ResponseEntity.ok(user);
-                })
-                .orElseGet(() -> {
-                    log.warn("Пользователь с id: {} не найден", id);
-                    return  ResponseEntity.notFound().build();
-                });
+        UserFriendsDto friendsDto = userService.getUserFriends(id);
+        log.info("Пользователь найден, всего друзей: {}", friendsDto.getFriends().size());
+
+        return ResponseEntity.ok(friendsDto);
     }
 
+    // получение инфо пользователя текущего пользователя
     @GetMapping("/me/info")
     public ResponseEntity<UserInfoDto> getCurrentUserInfo(@AuthenticationPrincipal UserDetails userDetails) {
         log.info("Запрос данных о текущем пользователе: {}", userDetails.getUsername());
 
-        return userService.getUserInfoByUsername(userDetails.getUsername())
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> {
-                    log.warn("Пользователь с username: {} не найден", userDetails.getUsername());
-                    return ResponseEntity.notFound().build();
-                });
+        UserInfoDto userInfoDto = userService.getUserInfoByUsername(userDetails.getUsername());
+        return ResponseEntity.ok(userInfoDto);
     }
 
     // поиск пользователя по запросу query

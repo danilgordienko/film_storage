@@ -11,6 +11,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import ru.danilgordienko.film_storage.DTO.UsersDto.UserFavoritesDto;
 import ru.danilgordienko.film_storage.DTO.mapping.UserMapping;
+import ru.danilgordienko.film_storage.exception.DatabaseConnectionException;
+import ru.danilgordienko.film_storage.exception.FavoriteAlreadyExistsException;
+import ru.danilgordienko.film_storage.exception.FavoriteNotFoundException;
 import ru.danilgordienko.film_storage.model.Favorite;
 import ru.danilgordienko.film_storage.model.Movie;
 import ru.danilgordienko.film_storage.model.User;
@@ -32,7 +35,7 @@ public class FavoriteService {
     private final MovieService movieService;
 
     //добавление фильма в избранное
-    public boolean addFavorite(Long id, String username) {
+    public void addFavorite(Long id, String username) {
         try {
             log.info("Добавление фильма в избранное. Пользователь: {}, Фильм ID: {}", username, id);
 
@@ -42,7 +45,7 @@ public class FavoriteService {
             if (favoriteRepository.existsByUserAndMovie(user, movie)) {
                 log.warn("Фильм '{}' уже в избранное пользователем '{}': фильм уже в избранном",
                         movie.getTitle(), user.getUsername());
-                return false;
+                throw new FavoriteAlreadyExistsException("Фильм уже в избранном");
             }
 
             Favorite favorite = Favorite
@@ -52,54 +55,35 @@ public class FavoriteService {
                     .build();
 
             favoriteRepository.save(favorite);
-            return true;
-        } catch (DataAccessException e ) {
+        } catch (DataAccessException e) {
             log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
-            return false;
-        } catch(EntityNotFoundException e) {
-            return false;
-        } catch (Exception e) {
-            log.error("Непредвиденная ошибка при добавлении избранного: {}", e.getMessage(), e);
-            return false;
+            throw new DatabaseConnectionException("Ошибка подключения к базе данных", e);
         }
     }
 
     @Transactional
-    public boolean removeFavorite(Long id, String username) {
+    public void removeFavorite(Long id, String username) {
         try {
             log.info("Удаление фильма из избранного. Пользователь: {}, Фильм ID: {}", username, id);
 
             var user = userService.getUserByUsername(username);
             var movie = movieService.getMovieById(id);
 
+            if (!favoriteRepository.existsByUserAndMovie(user, movie)) {
+                log.warn("Попытка удалить фильм '{}' из избранного пользователем '{}': фильм не находится в избранном",
+                        movie.getTitle(), user.getUsername());
+                throw new FavoriteNotFoundException("Фильм не находится в избранном");
+            }
+
             favoriteRepository.deleteByUserAndMovie(user, movie);
-            return true;
-        } catch (DataAccessException e ) {
+        } catch (DataAccessException e) {
             log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
-            return false;
-        } catch(EntityNotFoundException e) {
-            return false;
-        } catch (Exception e) {
-            log.error("Непредвиденная ошибка при добавлении избранного: {}", e.getMessage(), e);
-            return false;
+            throw new DatabaseConnectionException("Ошибка подключения к базе данных", e);
         }
     }
 
-    public Optional<UserFavoritesDto> getUserFavoritesByUsername(String username) {
-        try {
-            User user =  userService.getUserByUsername(username);
-            return Optional.of(userMapping.toUserFavoritesDto(user));
-        } catch (DataAccessException e ) {
-            log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
-            return Optional.empty();
-        } catch(MappingException e) {
-            log.error("Ошибка при маппинге {}", e.getMessage(), e);
-            return Optional.empty();
-        } catch(EntityNotFoundException e) {
-            return Optional.empty();
-        } catch (Exception e) {
-            log.error("Непредвиденная ошибка получении избранного: {}", e.getMessage(), e);
-            return Optional.empty();
-        }
+    public UserFavoritesDto getUserFavoritesByUsername(String username) {
+        User user =  userService.getUserByUsername(username);
+        return userMapping.toUserFavoritesDto(user);
     }
 }

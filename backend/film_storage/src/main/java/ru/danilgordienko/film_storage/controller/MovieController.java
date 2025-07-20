@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieDetailsDto;
 import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieListDto;
 import ru.danilgordienko.film_storage.DTO.PageDto;
+import ru.danilgordienko.film_storage.model.Movie;
 import ru.danilgordienko.film_storage.service.MovieService;
 
 import java.util.List;
@@ -65,17 +66,10 @@ public class MovieController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<MovieDetailsDto> getMovie(@PathVariable Long id){
-        log.info("GET /api/movies/{} - fetching movie by id", id);
+        log.info("GET /api/movies/{} - запрос фильм с id", id);
 
-        return movieService.getMovie(id)
-                .map(movie -> {
-                    log.info("Movie found: {}", movie.getTitle());
-                    return ResponseEntity.ok(movie);
-                })
-                .orElseGet(() -> {
-                    log.warn("Movie with id {} not found", id);
-                    return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-                });
+        MovieDetailsDto movie = movieService.getMovie(id);
+        return ResponseEntity.ok(movie);
     }
 
     // получение постера к фильму

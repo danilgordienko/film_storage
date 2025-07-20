@@ -12,6 +12,9 @@ import org.springframework.web.client.RestClientException;
 import ru.danilgordienko.film_storage.DTO.RatingDto;
 import ru.danilgordienko.film_storage.DTO.UsersDto.UserRatingDto;
 import ru.danilgordienko.film_storage.DTO.mapping.UserMapping;
+import ru.danilgordienko.film_storage.exception.DatabaseConnectionException;
+import ru.danilgordienko.film_storage.exception.ElasticsearchConnectionException;
+import ru.danilgordienko.film_storage.exception.RatingAlreadyExistsException;
 import ru.danilgordienko.film_storage.model.Movie;
 import ru.danilgordienko.film_storage.model.Rating;
 import ru.danilgordienko.film_storage.model.User;
@@ -39,7 +42,7 @@ public class RatingService {
 
     //добавляем рейтинг к фильму
     @Transactional
-    public boolean addRating(Long id, RatingDto rating, String username)
+    public void addRating(Long id, RatingDto rating, String username)
     {
         try {
             var user = userService.getUserByUsername(username);
@@ -48,7 +51,7 @@ public class RatingService {
 
             if (ratingRepository.existsByUserAndMovie(user, movie)) {
                 log.warn("Отзыв не добавлен: пользователь с именем '{}' уже оставлял отзыв ", username);
-                return false;
+                throw new RatingAlreadyExistsException("Рейтинг от пользователя "+ username + " уже был оставлен");
             }
 
             Rating rate = Rating.builder()
@@ -62,12 +65,9 @@ public class RatingService {
             // Обновляем среднюю оценку
             // В случае если вознкнет ошибка транзакция откатится
             updateAverageRatingInElasticsearch(movie);
-            return true;
-        } catch (DataAccessException e ) {
-            log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
-            return false;
-        } catch(EntityNotFoundException e) {
-            return false;
+        } catch (DataAccessException e) {
+            log.error("Ошибка подключения к БД при поиске по ID", e);
+            throw new DatabaseConnectionException("Не удалось получить пользователя из БД", e);
         }
     }
 
@@ -82,8 +82,8 @@ public class RatingService {
                 log.info("Средняя оценка обновлена в Elasticsearch: {}", avgRating);
             });
         } catch (ElasticsearchException | RestClientException e) {
-            log.error("Ошибка подключения к Elasticsearch: {}", e.getMessage(), e);
-            throw e;
+            log.error("Ошибка при работе с Elasticsearch", e);
+            throw new ElasticsearchConnectionException("Не удалось найти пользователя в Elasticsearch", e);
         } catch (Exception e) {
             log.error("Непредвиденная ошибка при обнолении оценки: {}", e.getMessage(), e);
             throw new RuntimeException("", e);
@@ -102,34 +102,14 @@ public class RatingService {
     }
 
     // получение оценка пользователя по username
-    public Optional<UserRatingDto> getUserRatingsByUsername(String username){
-        try {
-            User user = userService.getUserByUsername(username);
-            return Optional.of(userMapping.toUserRatingDto(user));
-        } catch (DataAccessException | EntityNotFoundException e ) {
-            return Optional.empty();
-        } catch(MappingException e) {
-            log.error("Ошибка при маппинге {}", e.getMessage(), e);
-            return Optional.empty();
-        } catch (Exception e) {
-            log.error("Непредвиденная ошибка при добавлении избранного: {}", e.getMessage(), e);
-            return Optional.empty();
-        }
+    public UserRatingDto getUserRatingsByUsername(String username){
+        User user = userService.getUserByUsername(username);
+        return userMapping.toUserRatingDto(user);
     }
 
     // получение оценка пользователя по id
-    public Optional<UserRatingDto> getUserRatings(Long id){
-        try {
-            User user = userService.getUserById(id);
-            return Optional.of(userMapping.toUserRatingDto(user));
-        } catch (DataAccessException | EntityNotFoundException e ) {
-            return Optional.empty();
-        } catch(MappingException e) {
-            log.error("Ошибка при маппинге {}", e.getMessage(), e);
-            return Optional.empty();
-        } catch (Exception e) {
-            log.error("Непредвиденная ошибка при добавлении избранного: {}", e.getMessage(), e);
-            return Optional.empty();
-        }
+    public UserRatingDto getUserRatings(Long id){
+        User user = userService.getUserById(id);
+        return userMapping.toUserRatingDto(user);
     }
 }

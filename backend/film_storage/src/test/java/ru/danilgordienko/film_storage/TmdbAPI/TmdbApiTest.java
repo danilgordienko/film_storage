@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import ru.danilgordienko.film_storage.MovieAPI.MovieApiClient;
 import ru.danilgordienko.film_storage.model.Genre;
 
 import java.util.List;
@@ -26,7 +27,7 @@ public class TmdbApiTest {
     private RestTemplate restTemplate;
 
     @InjectMocks
-    private TmdbClient tmdbClient;
+    private MovieApiClient movieApiClient;
 
     @Test
     public void testGetPopularMoviesReturnsList() {
@@ -39,7 +40,7 @@ public class TmdbApiTest {
         when(restTemplate.getForEntity(anyString(), eq(TmdbResponse.class)))
                 .thenReturn(new ResponseEntity<>(response, HttpStatus.OK));
 
-        List<TmdbMovie> result = tmdbClient.getPopularMovies();
+        List<TmdbMovie> result = movieApiClient.getPopularMovies();
 
         assertEquals(1, result.size());
         assertEquals("Movie 1", result.getFirst().getTitle());
@@ -50,7 +51,7 @@ public class TmdbApiTest {
         when(restTemplate.getForEntity(anyString(), eq(TmdbResponse.class)))
                 .thenReturn(new ResponseEntity<>(null, HttpStatus.OK));
 
-        List<TmdbMovie> result = tmdbClient.getPopularMovies();
+        List<TmdbMovie> result = movieApiClient.getPopularMovies();
 
         assertTrue(result.isEmpty());
     }
@@ -60,7 +61,7 @@ public class TmdbApiTest {
         when(restTemplate.getForEntity(anyString(), eq(TmdbResponse.class)))
                 .thenThrow(new RestClientException("Network error"));
 
-        List<TmdbMovie> result = tmdbClient.getPopularMovies();
+        List<TmdbMovie> result = movieApiClient.getPopularMovies();
 
         assertTrue(result.isEmpty());
     }
@@ -71,13 +72,13 @@ public class TmdbApiTest {
         genre1.setId(1L);
         genre1.setName("Action");
 
-        TmdbClient.GenreResponse response = new TmdbClient.GenreResponse();
+        MovieApiClient.GenreResponse response = new MovieApiClient.GenreResponse();
         response.setGenres(List.of(genre1));
 
-        when(restTemplate.getForEntity(anyString(), eq(TmdbClient.GenreResponse.class)))
+        when(restTemplate.getForEntity(anyString(), eq(MovieApiClient.GenreResponse.class)))
                 .thenReturn(new ResponseEntity<>(response, HttpStatus.OK));
 
-        List<Genre> result = tmdbClient.loadGenres();
+        List<Genre> result = movieApiClient.loadGenres();
 
         assertEquals(1, result.size());
         assertEquals("Action", result.getFirst().getName());
@@ -86,20 +87,20 @@ public class TmdbApiTest {
 
     @Test
     public void testLoadGenresReturnsEmptyListOnError() {
-        when(restTemplate.getForEntity(anyString(), eq(TmdbClient.GenreResponse.class)))
+        when(restTemplate.getForEntity(anyString(), eq(MovieApiClient.GenreResponse.class)))
                 .thenThrow(new RestClientException("API down"));
 
-        List<Genre> result = tmdbClient.loadGenres();
+        List<Genre> result = movieApiClient.loadGenres();
 
         assertTrue(result.isEmpty());
     }
 
     @Test
     public void testLoadGenresReturnsEmptyListWhenResponseIsNull() {
-        when(restTemplate.getForEntity(anyString(), eq(TmdbClient.GenreResponse.class)))
+        when(restTemplate.getForEntity(anyString(), eq(MovieApiClient.GenreResponse.class)))
                 .thenReturn(new ResponseEntity<>(null, HttpStatus.OK));
 
-        List<Genre> result = tmdbClient.loadGenres();
+        List<Genre> result = movieApiClient.loadGenres();
 
         assertTrue(result.isEmpty());
     }

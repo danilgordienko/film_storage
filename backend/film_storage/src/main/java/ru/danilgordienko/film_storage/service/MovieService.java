@@ -27,6 +27,10 @@ import ru.danilgordienko.film_storage.DTO.PageDto;
 import ru.danilgordienko.film_storage.DTO.mapping.MovieMapping;
 import ru.danilgordienko.film_storage.MovieAPI.MovieApiClient;
 import ru.danilgordienko.film_storage.config.RabbitConfig;
+import ru.danilgordienko.film_storage.exception.DatabaseConnectionException;
+import ru.danilgordienko.film_storage.exception.ElasticsearchConnectionException;
+import ru.danilgordienko.film_storage.exception.MovieNotFoundException;
+import ru.danilgordienko.film_storage.exception.MovieSaveException;
 import ru.danilgordienko.film_storage.model.*;
 import ru.danilgordienko.film_storage.repository.GenreRepository;
 import ru.danilgordienko.film_storage.repository.MovieRepository;
@@ -61,10 +65,7 @@ public class MovieService {
             return movies;
         } catch (DataAccessException e) {
             log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
-            return List.of();
-        } catch (Exception e) {
-            log.error("Непредвиденная ошибка при получении фильмов: {}", e.getMessage(), e);
-            return List.of();
+            throw new DatabaseConnectionException("Ошибка подключения к базе данных", e);
         }
     }
 
@@ -91,10 +92,7 @@ public class MovieService {
             return movieMapping.toPageDto(dtoPage);
         } catch (DataAccessException e) {
             log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
-            return new PageDto(List.of(), 0, 0);
-        } catch (Exception e) {
-            log.error("Непредвиденная ошибка при получении страницы фильмов: {}", e.getMessage(), e);
-            return new PageDto(List.of(), 0, 0);
+            throw new DatabaseConnectionException("Ошибка подключения к базе данных", e);
         }
     }
 
@@ -107,25 +105,14 @@ public class MovieService {
             return genres;
         } catch (DataAccessException e) {
             log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
-            return List.of();
-        } catch (Exception e) {
-            log.error("Непредвиденная ошибка при жанров фильмов: {}", e.getMessage(), e);
-            return List.of();
+            throw new DatabaseConnectionException("Ошибка подключения к базе данных", e);
         }
     }
 
     // Получение фильма по ID
-    public Optional<MovieDetailsDto> getMovie(Long id) {
-        try {
+    public MovieDetailsDto getMovie(Long id) {
             var movie = getMovieById(id);
-            return Optional.of(movieMapping.toMovieDetailsDto(movie));
-        }catch (DataAccessException | EntityNotFoundException e) {
-            log.error(e.getMessage(), e);
-            return Optional.empty();
-        } catch (Exception e) {
-            log.error("Непредвиденная ошибка при получении фильма: {}", e.getMessage(), e);
-            return Optional.empty();
-        }
+            return movieMapping.toMovieDetailsDto(movie);
     }
 
     // Получение фильма по ID
@@ -133,15 +120,15 @@ public class MovieService {
         try {
             log.info("Получение фильма с ID = {}", id);
             Movie movie = movieRepository.findById(id)
-                    .orElseThrow(() -> new EntityNotFoundException("Фильм с id " + id + " не найден"));
+                    .orElseThrow(() -> {
+                        log.warn("");
+                        return new MovieNotFoundException("Фильм с id " + id + " не найден");
+                    });
             log.info("Фильм найден: {}", movie.getTitle());
             return movie;
         } catch (DataAccessException e) {
             log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
-            throw e;
-        } catch (Exception e) {
-            log.error("Непредвиденная ошибка при получении фильма: {}", e.getMessage(), e);
-            throw new RuntimeException("Внутренняя ошибка при получении фильма", e);
+            throw new DatabaseConnectionException("Ошибка подключения к базе данных", e);
         }
     }
 
@@ -164,11 +151,8 @@ public class MovieService {
 
             return movies;
         } catch (ElasticsearchException | RestClientException e) {
-            log.error("Ошибка подключения к Elasticsearch: {}", e.getMessage(), e);
-            return List.of();
-        } catch (Exception e) {
-            log.error("Ошибка при поиске в Elasticsearch: {}", e.getMessage(), e);
-            return  List.of();
+            log.error("Ошибка при работе с Elasticsearch", e);
+            throw new ElasticsearchConnectionException("Не удалось найти пользователя в Elasticsearch", e);
         }
     }
 
@@ -190,31 +174,16 @@ public class MovieService {
             log.info("Найдено {} фильмов", dtoList.size());
             return movieMapping.toMovieListPageDto(dtoPage);
         } catch (ElasticsearchException | RestClientException e) {
-            log.error("Ошибка подключения к Elasticsearch: {}", e.getMessage(), e);
-            return new PageDto(List.of(), 0, 0);
-        } catch (Exception e) {
-            log.error("Ошибка при поиске в Elasticsearch: {}", e.getMessage(), e);
-            return new PageDto(List.of(), 0, 0);
+            log.error("Ошибка при работе с Elasticsearch", e);
+            throw new ElasticsearchConnectionException("Не удалось найти пользователя в Elasticsearch", e);
         }
     }
 
     // получение постера к фильму(отпправляет запрос брокеру и ждет ответа)
     @Cacheable(value = "movies", key = "#id", cacheManager = "binaryCacheManager")
     public byte[] getPoster(Long id) {
-        try {
-            return movieRepository.findById(id)
-                    .map(movie -> {
-                        log.info("Фильм с id: {} найден", id);
-                        return movieApiClient.getPoster(movie);
-                    })
-                    .orElse(new byte[0]);
-        } catch (DataAccessException e) {
-            log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
-            return new byte[0];
-        } catch (Exception e) {
-            log.error("Непредвиденная ошибка при получении постера: {}", e.getMessage(), e);
-            return new byte[0];
-        }
+        Movie movie = getMovieById(id);
+        return movieApiClient.getPoster(movie);
     }
 
     // приклпляет уже существующий жанр к фильму
@@ -256,12 +225,15 @@ public class MovieService {
 
             log.info("Сохранено {} фильмов", movies.size());
             // пробрасываем все ошибки дальше, чтоб транзакция откатилась
-        } catch (ElasticsearchException | RestClientException | DataAccessException | IllegalStateException e) {
+        } catch (ElasticsearchException | RestClientException e) {
+            log.error("Ошибка при работе с Elasticsearch", e);
+            throw new ElasticsearchConnectionException("Не удалось найти пользователя в Elasticsearch", e);
+        } catch (DataAccessException e) {
+            log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
+            throw new DatabaseConnectionException("Ошибка подключения к базе данных", e);
+        } catch (Exception e) {
             log.error("Ошибка при сохранении фильмов", e);
-            throw e;
-        } catch (RuntimeException e) {
-            log.error("Непредвиденная ошибка при получении постера: {}", e.getMessage(), e);
-            throw e;
+            throw new MovieSaveException("Ошибка при сохранении фильмов", e);
         }
     }
 

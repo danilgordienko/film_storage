@@ -36,54 +36,25 @@ public class RatingController {
                                             @RequestBody @Valid RatingDto rating,
                                             BindingResult bindingResult) {
         log.info("Запрос на добавление рейтинга фильму: id={}, rating={}", id, rating);
-
-        try {
-            //проверяем есть ли ошибки валидации полученного рейтинга
-            if (bindingResult.hasErrors()) {
-                String errorMessage = bindingResult.getAllErrors()
-                        .stream()
-                        .map(ObjectError::getDefaultMessage)
-                        .collect(Collectors.joining(", "));
-                log.warn("Ошибки валидации рейтинга для фильма id={}: {}", id, errorMessage);
-                return ResponseEntity.badRequest().body(errorMessage);
-            }
-
-            if(!ratingService.addRating(id, rating, userDetails.getUsername())){
-                log.warn("Ошибка при добавлении рейтинга фильму: id={}", id);
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-            }
-            log.info("Рейтинг успешно добавлен фильму: id={}", id);
-            return ResponseEntity.ok("Рейтинг добавлен");
-        } catch (Exception e) {
-            log.error("Ошибка сервера при добавлении рейтинга фильму: id={}, error={}", id, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Ошибка сервера");
-        }
+        ratingService.addRating(id, rating, userDetails.getUsername());
+        log.info("Рейтинг успешно добавлен фильму: id={}", id);
+        return ResponseEntity.ok("Рейтинг добавлен");
     }
 
+    // получение оценок текущего пользователя
     @GetMapping("users/me")
     public ResponseEntity<UserRatingDto> getCurrentUserRatings(@AuthenticationPrincipal UserDetails userDetails) {
         log.info("Запрос оценок текущего пользователя: {}", userDetails.getUsername());
-
-        return ratingService.getUserRatingsByUsername(userDetails.getUsername())
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> {
-                    log.warn("Оценки пользователя с username: {} не найдены", userDetails.getUsername());
-                    return ResponseEntity.notFound().build();
-                });
+        return ResponseEntity.ok(ratingService.getUserRatingsByUsername(userDetails.getUsername()));
     }
 
+    // получение оценок полльзоваля по id
     @GetMapping("users/{id}")
     public ResponseEntity<UserRatingDto> getUserRatings(@PathVariable Long id){
         log.info("Запрос оценок пользователя с id: {}", id);
 
-        return ratingService.getUserRatings(id)
-                .map(user -> {
-                    log.info("Пользователь найден, всего оценок: {}", user.getRatings().size());
-                    return ResponseEntity.ok(user);
-                })
-                .orElseGet(() -> {
-                    log.warn("Пользователь с id: {} не найден", id);
-                    return  ResponseEntity.notFound().build();
-                });
+        UserRatingDto user = ratingService.getUserRatings(id);
+        log.info("Пользователь найден, всего оценок: {}", user.getRatings().size());
+        return ResponseEntity.ok(user);
     }
 }

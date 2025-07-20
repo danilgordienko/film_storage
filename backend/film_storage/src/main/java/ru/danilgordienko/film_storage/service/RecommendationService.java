@@ -7,6 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.danilgordienko.film_storage.DTO.RecommendationDto;
 import ru.danilgordienko.film_storage.DTO.mapping.RecommendationMapping;
+import ru.danilgordienko.film_storage.exception.RecommendationAlreadyExistsException;
+import ru.danilgordienko.film_storage.exception.RecommendationNotFoundException;
 import ru.danilgordienko.film_storage.model.Movie;
 import ru.danilgordienko.film_storage.model.Recommendation;
 import ru.danilgordienko.film_storage.model.User;
@@ -32,7 +34,10 @@ public class RecommendationService {
         Movie movie = movieService.getMovieById(movieId);
 
         if (recommendationRepository.existsBySenderAndReceiverAndMovie(sender, receiver, movie)) {
-            throw new InstanceAlreadyExistsException("");
+            log.warn("Отзыв не добавлен: пользователь с именем '{}' уже оставлял отзыв ", username);
+            throw new RecommendationAlreadyExistsException("Рекомендация фильма " + movie.getTitle()
+                    + " от " + sender.getUsername() + " к "
+                    + receiver.getUsername() + " уже существует");
         }
 
         Recommendation recommendation = Recommendation.builder()
@@ -51,7 +56,12 @@ public class RecommendationService {
         Movie movie = movieService.getMovieById(movieId);
 
         Recommendation recommendation = recommendationRepository.findBySenderAndReceiverAndMovie(sender, receiver, movie)
-                .orElseThrow(() -> new EntityNotFoundException(""));
+                .orElseThrow(() -> {
+                    log.warn("Рекомендация не найдена");
+                    return new RecommendationNotFoundException("Рекомендация фильма " + movie.getTitle()
+                            + " от " + sender.getUsername() + " к "
+                            + receiver.getUsername() + " не существует");
+                });
 
         recommendationRepository.delete(recommendation);
     }
