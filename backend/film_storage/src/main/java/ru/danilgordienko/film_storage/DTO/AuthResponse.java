@@ -7,10 +7,8 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class RecommendationDto {
-    private Long id;
-    private Long movieId;
-    private Long senderId;
-    private Long receiverId;
-    //private boolean watched;
+public class AuthResponse {
+
+    String access_token;
+    String refresh_token;
 }

@@ -102,33 +102,6 @@ public class UserService implements UserDetailsService {
         }
     }
 
-    // регистрация пользователя
-    @Transactional
-    public boolean addUser(UserRegistrationDTO user) {
-        try {
-            log.info("Регистрация нового пользователя: {}", user.getUsername());
-            User userToAdd = User.builder()
-                    .username(user.getUsername())
-                    .password(user.getPassword())
-                    .build();
-
-            userRepository.save(userToAdd);
-            userSearchRepository.save(userMapping.toUserDocument(userToAdd));
-
-            log.info("Пользователь '{}' успешно зарегистрирован", user.getUsername());
-            return true;
-        } catch (DataAccessException e) {
-            log.error("Ошибка сохранения в БД", e);
-            throw new DatabaseConnectionException("Не удалось сохранить пользователя в БД", e);
-        } catch (ElasticsearchException | RestClientException e) {
-            log.error("Ошибка при сохранении в Elasticsearch", e);
-            throw new ElasticsearchConnectionException("Не удалось сохранить пользователя в Elasticsearch", e);
-        } catch (Exception e) {
-            log.error("Ошибка регистрации пользователя", e);
-            throw new UserRegistrationException("Непредвиденная ошибка при регистрации", e);
-        }
-    }
-
     @Transactional
     public void saveUser(User user) {
         try {
@@ -139,17 +112,17 @@ public class UserService implements UserDetailsService {
         }
     }
 
-    // проверяет зарегистрирован ли уже пользователь
-    public boolean existsUser(String username) {
-        try {
-            boolean exists = userRepository.existsByUsername(username);
-            log.info("Проверка существования пользователя '{}': {}", username, exists);
-            return exists;
-        } catch (DataAccessException e) {
-            log.error("Ошибка сохранения в БД", e);
-            throw new DatabaseConnectionException("Не удалось сохранить пользователя в БД", e);
-        }
-    }
+//    // проверяет зарегистрирован ли уже пользователь
+//    public boolean existsUser(String username) {
+//        try {
+//            boolean exists = userRepository.existsByUsername(username);
+//            log.info("Проверка существования пользователя '{}': {}", username, exists);
+//            return exists;
+//        } catch (DataAccessException e) {
+//            log.error("Ошибка сохранения в БД", e);
+//            throw new DatabaseConnectionException("Не удалось сохранить пользователя в БД", e);
+//        }
+//    }
 
     // получение информации о пользователе
     public UserInfoDto getUserInfo(Long id) {

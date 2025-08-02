@@ -54,7 +54,7 @@ public class MovieApiClient {
                 movie.getPoster()
         );
         return response.map(r -> {
-            log.info("");
+            log.info("Постер к фильму с id: {} получен", movie.getId());
             return (byte[]) r;
         }).orElse(new byte[0]);
     }

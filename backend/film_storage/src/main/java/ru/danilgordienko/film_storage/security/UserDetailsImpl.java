@@ -7,10 +7,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import ru.danilgordienko.film_storage.model.User;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -19,21 +16,25 @@ import java.util.stream.Collectors;
 public class UserDetailsImpl implements UserDetails {
 
     private Long id;
+    private String email;
     private String username;
     private String password;
+    private Set<String> roles;
 
 
     public static UserDetailsImpl build(User user) {
         return new UserDetailsImpl(
                 user.getId(),
+                user.getEmail(),
                 user.getUsername(),
-                user.getPassword());
+                user.getPassword(),
+                user.getRoles());
     }
 
-    //TODO сделать роли
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_USER"));
+        return roles.stream().map(role ->
+                new SimpleGrantedAuthority("ROLE_" + role)).collect(Collectors.toSet());
     }
 
     @Override

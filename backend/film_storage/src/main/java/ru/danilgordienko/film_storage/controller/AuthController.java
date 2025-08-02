@@ -5,6 +5,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -13,12 +14,12 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import ru.danilgordienko.film_storage.DTO.AuthResponse;
+import ru.danilgordienko.film_storage.DTO.UsersDto.UserLoginDto;
 import ru.danilgordienko.film_storage.DTO.UsersDto.UserRegistrationDTO;
 import ru.danilgordienko.film_storage.security.JWTCore;
+import ru.danilgordienko.film_storage.service.AuthService;
 import ru.danilgordienko.film_storage.service.UserService;
 
 @RestController
@@ -29,66 +30,47 @@ public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final JWTCore jwtCore;
-    private final UserService userService;
     private final PasswordEncoder passwordEncoder;
+    private final AuthService authService;
 
     /**
      * Аутентификация пользователя и выдача JWT-токена
      */
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody UserRegistrationDTO user) {
-        log.info("Попытка входа пользователя: {}", user.getUsername());
-        try {
-            // Создаем объект аутентификации с переданными учетными данными
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword())
-            );
-            // Устанавливаем аутентифицированного пользователя в SecurityContext
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            // Генерируем JWT-токен
-            String jwt = jwtCore.generateToken(authentication);
-            log.info("Успешная аутентификация: {}", user.getUsername());
-            return ResponseEntity.ok(jwt);
-        } catch (BadCredentialsException e) {
-            log.warn("Неверные учетные данные для пользователя: {}", user.getUsername());
-            return ResponseEntity.status(401).body("Invalid username or password");
-        } catch (UsernameNotFoundException e) {
-            log.warn("Пользователь не найден: {}", user.getUsername());
-            return ResponseEntity.status(404).body("User not found");
-        } catch (Exception e) {
-            log.error("Ошибка при генерации токена для пользователя: {}", user.getUsername(), e);
-            return ResponseEntity.status(500).body("Error generating token");
-        }
-
+    public ResponseEntity<AuthResponse> login(@RequestBody @Valid UserLoginDto loginDto) {
+        log.info("Попытка входа пользователя: {}", loginDto.getUsername());
+        AuthResponse response = authService.login(loginDto);
+        log.info("Успешная аутентификация: {}", loginDto.getUsername());
+        return ResponseEntity.ok(response);
     }
 
     /**
      * Регистрация нового пользователя
      */
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody @Valid UserRegistrationDTO user, BindingResult result) {
+    public ResponseEntity<AuthResponse> register(@RequestBody @Valid UserRegistrationDTO user) {
         log.info("Попытка регистрации пользователя: {}", user.getUsername());
+        AuthResponse response = authService.register(user);
+        log.info("Пользователь успешно зарегистрирован: {}", user.getUsername());
+        return ResponseEntity.ok(response);
+    }
 
-        try {
-            //проверяем есть ли ошибки при вводе логина и пароля
-            if (result.hasErrors()) {
-                String errorMessage = result.getAllErrors().getFirst().getDefaultMessage();
-                log.warn("Ошибка валидации при регистрации пользователя {}: {}", user.getUsername(), errorMessage);
-                return ResponseEntity.badRequest().body(errorMessage);
-            }
+    @PostMapping("token/refresh")
+    public ResponseEntity<AuthResponse> refresh(@RequestHeader("Authorization") String authHeader) {
+        log.info("Received token refresh request");
+        return ResponseEntity.ok(authService.refresh(authHeader));
+    }
 
-            if (userService.existsUser(user.getUsername())) {
-                log.warn("Пользователь уже существует: {}", user.getUsername());
-                return ResponseEntity.status(409).body("User already exists");
-            }
-            // Кодируем пароль перед сохранением
-            user.setPassword(passwordEncoder.encode(user.getPassword()));
-            userService.addUser(user);
-            log.info("Пользователь успешно зарегистрирован: {}", user.getUsername());
-            return ResponseEntity.ok("User registered successfully");
-        } catch (Exception e) {
-            log.error("Ошибка при регистрации пользователя: {}", user.getUsername(), e);
-            return ResponseEntity.status(400).body("Error registering user: " + e.getMessage());
-        }
+    @PostMapping("/logout")
+    public void logout(@RequestHeader("Authorization") String authHeader) {
+        log.info("Received logout request");
+        authService.logout(authHeader);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/add/admin/{login}")
+    public ResponseEntity<String> assignAdminRole(@PathVariable String login) {
+        authService.addAdminRole(login);
+        return ResponseEntity.ok("Admin role assigned to user " + login);
     }
 }

@@ -72,8 +72,7 @@ public class SecurityConfig {
         return http.csrf(AbstractHttpConfigurer::disable)
                 .cors(withDefaults())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**", "/api/movies/*/poster").permitAll()
-                        .requestMatchers("/api/movies/**").hasRole("USER")
+                        .requestMatchers("api/auth/login", "api/auth/register").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(STATELESS))

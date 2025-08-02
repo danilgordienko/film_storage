@@ -28,7 +28,7 @@ public class RecommendationService {
     private final RecommendationMapping  recommendationMapping;
 
     @Transactional
-    public void sendRecommendation(String username, Long receiverId, Long movieId) throws InstanceAlreadyExistsException {
+    public void sendRecommendation(String username, Long receiverId, Long movieId) {
         User sender = userService.getUserByUsername(username);
         User receiver = userService.getUserById(receiverId);
         Movie movie = movieService.getMovieById(movieId);
@@ -81,7 +81,4 @@ public class RecommendationService {
         return recommendationRepository.findByReceiver(receiver).stream()
                 .map(recommendationMapping::toRecommendationDto).toList();
     }
-
-
-
 }

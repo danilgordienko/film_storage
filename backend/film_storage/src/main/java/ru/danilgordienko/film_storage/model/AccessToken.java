@@ -6,22 +6,22 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data
 @Entity
+@Table(name = "access_tokens")
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Recommendation {
+public class AccessToken {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    private User sender;
-    @ManyToOne
-    private User receiver;
-    @ManyToOne
-    private Movie movie;
+    @Column(nullable = false, unique = true)
+    private String token;
 
-    //private boolean watched;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 }

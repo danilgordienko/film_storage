@@ -27,7 +27,7 @@ public class RecommendationController {
     public ResponseEntity<Void> sendRecommendation(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam Long receiverId,
-            @RequestParam Long movieId) throws InstanceAlreadyExistsException {
+            @RequestParam Long movieId) {
 
         String username = userDetails.getUsername();
         log.info("Пользователь {} отправляет рекомендацию фильма {} пользователю {}",

@@ -46,6 +46,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(errors);
     }
 
+    @ExceptionHandler(TokenException.class)
+    public ResponseEntity<String> handleTokenNotFound(TokenException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    }
+
     @ExceptionHandler(UserRegistrationException.class)
     public ResponseEntity<String> handleUserRegistration(UserRegistrationException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());

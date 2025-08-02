@@ -15,6 +15,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.filter.OncePerRequestFilter;
+import ru.danilgordienko.film_storage.exception.TokenAlreadyRevokedException;
+import ru.danilgordienko.film_storage.exception.TokenExpiredException;
+import ru.danilgordienko.film_storage.exception.TokenNotFoundException;
 
 import java.io.IOException;
 import java.security.SignatureException;
@@ -47,6 +50,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
             String token = getTokenFromRequest(request);
 
             if (token != null) {
+                jwtCore.validateAccessToken(token);
                 // Извлекаем имя пользователя из токена
                 String username = jwtCore.getUsernameFromToken(token);
                 log.debug("Получен токен для пользователя: {}", username);
@@ -64,10 +68,10 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
             // Передаем управление следующему фильтру в цепочке
             filterChain.doFilter(request, response);
 
-        } catch (ExpiredJwtException e) {
+        } catch (TokenExpiredException e) {
             log.warn("JWT-токен просрочен: {}", e.getMessage());
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "JWT-токен просрочен");
-        } catch (UnsupportedJwtException | MalformedJwtException e) {
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "JWT-токен просрочен");
+        } catch (UnsupportedJwtException | MalformedJwtException | TokenNotFoundException e) {
             log.warn("Недействительный JWT-токен: {}", e.getMessage());
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Недействительный JWT-токен");
         } catch (JwtException e) {
