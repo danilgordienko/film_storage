@@ -9,6 +9,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import ru.danilgordienko.film_storage.DTO.UsersDto.UserFriendsDto;
 import ru.danilgordienko.film_storage.DTO.UsersDto.UserInfoDto;
+import ru.danilgordienko.film_storage.DTO.UsersDto.UserListDto;
 import ru.danilgordienko.film_storage.service.FriendshipService;
 import ru.danilgordienko.film_storage.service.UserService;
 
@@ -21,6 +22,17 @@ import java.util.List;
 public class FriendshipController {
     private final FriendshipService friendshipService;
     private final UserService userService;
+
+    // получение друзей пользователя по id
+    @GetMapping("/users/{id}")
+    public ResponseEntity<UserFriendsDto> getUserFriends(@PathVariable Long id) {
+        log.info("Запрос друзей пользователя с id: {}", id);
+
+        UserFriendsDto friendsDto = userService.getUserFriends(id);
+        log.info("Пользователь найден, всего друзей: {}", friendsDto.getFriends().size());
+
+        return ResponseEntity.ok(friendsDto);
+    }
 
     // получение друзей текущего пользователя
     @GetMapping
@@ -73,18 +85,18 @@ public class FriendshipController {
 
     // Посмотреть входящие заявки
     @GetMapping("/requests/incoming")
-    public ResponseEntity<List<UserInfoDto>> getIncomingRequests(@AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<List<UserListDto>> getIncomingRequests(@AuthenticationPrincipal UserDetails userDetails) {
         log.info("Пользователь {} запрашивает входящие заявки", userDetails.getUsername());
-        List<UserInfoDto> requests = friendshipService.getIncomingRequests(userDetails.getUsername());
+        List<UserListDto> requests = friendshipService.getIncomingRequests(userDetails.getUsername());
         log.info("Входящие заявки для пользователя {} получены, всего:  {}", userDetails.getUsername(), requests.size());
         return ResponseEntity.ok(requests);
     }
 
     // Посмотреть исходящие заявки
     @GetMapping("/requests/outgoing")
-    public ResponseEntity<List<UserInfoDto>> getOutgoingRequests(@AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<List<UserListDto>> getOutgoingRequests(@AuthenticationPrincipal UserDetails userDetails) {
         log.info("Пользователь {} запрашивает исходящие заявки", userDetails.getUsername());
-        List<UserInfoDto> requests = friendshipService.getOutgoingRequests(userDetails.getUsername());
+        List<UserListDto> requests = friendshipService.getOutgoingRequests(userDetails.getUsername());
         log.info("Исходящие заявки для пользователя {} получены, всего:  {}", userDetails.getUsername(), requests.size());
         return ResponseEntity.ok(requests);
     }

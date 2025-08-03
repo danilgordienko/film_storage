@@ -7,6 +7,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import ru.danilgordienko.film_storage.DTO.UsersDto.UserFriendsDto;
 import ru.danilgordienko.film_storage.DTO.UsersDto.UserInfoDto;
+import ru.danilgordienko.film_storage.DTO.UsersDto.UserListDto;
 import ru.danilgordienko.film_storage.DTO.mapping.UserMapping;
 import ru.danilgordienko.film_storage.exception.DatabaseConnectionException;
 import ru.danilgordienko.film_storage.exception.FriendRequestNotFoundException;
@@ -144,11 +145,11 @@ public class FriendshipServiceImpl implements FriendshipService {
     }
 
     // получение входящих запросов в друзья для текущего пользователя
-    public List<UserInfoDto> getIncomingRequests(String username) {
+    public List<UserListDto> getIncomingRequests(String username) {
         try {
             User user = userService.getUserByUsername(username);
             return friendRequestRepository.findByReceiver(user)
-                    .stream().map(r -> userMapping.toUserInfoDto(r.getSender())).toList();
+                    .stream().map(r -> userMapping.toUserListDto(r.getSender())).toList();
         } catch (DataAccessException e) {
             log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
             throw new DatabaseConnectionException("Ошибка подключения к базе данных", e);
@@ -156,11 +157,11 @@ public class FriendshipServiceImpl implements FriendshipService {
     }
 
     // получение отправленных запросов от текущего пользователя
-    public List<UserInfoDto> getOutgoingRequests(String username) {
+    public List<UserListDto> getOutgoingRequests(String username) {
         try {
             User user = userService.getUserByUsername(username);
             return friendRequestRepository.findBySender(user)
-                    .stream().map(r -> userMapping.toUserInfoDto(r.getReceiver())).toList();
+                    .stream().map(r -> userMapping.toUserListDto(r.getReceiver())).toList();
         } catch (DataAccessException e) {
             log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
             throw new DatabaseConnectionException("Ошибка подключения к базе данных", e);

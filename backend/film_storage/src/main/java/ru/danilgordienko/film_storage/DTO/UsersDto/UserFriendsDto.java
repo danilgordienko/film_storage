@@ -6,5 +6,5 @@ import java.util.List;
 
 @Data
 public class UserFriendsDto {
-    private List<UserInfoDto> friends;
+    private List<UserListDto> friends;
 }

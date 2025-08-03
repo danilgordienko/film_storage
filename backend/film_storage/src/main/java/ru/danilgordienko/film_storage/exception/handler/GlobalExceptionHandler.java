@@ -83,7 +83,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<String> handleRecommendationError(IllegalStateException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex.getMessage());
     }
 
     @ExceptionHandler(DatabaseConnectionException.class)
@@ -106,7 +106,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MappingException.class)
     public ResponseEntity<String> handleMappingException(MappingException ex) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body("Ошибка при преобразовании данных. " + ex.getMessage());
     }
 }

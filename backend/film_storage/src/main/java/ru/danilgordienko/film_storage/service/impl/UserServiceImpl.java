@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import ru.danilgordienko.film_storage.DTO.UsersDto.UserFriendsDto;
 import ru.danilgordienko.film_storage.DTO.UsersDto.UserInfoDto;
+import ru.danilgordienko.film_storage.DTO.UsersDto.UserListDto;
 import ru.danilgordienko.film_storage.DTO.mapping.UserMapping;
 import ru.danilgordienko.film_storage.exception.DatabaseConnectionException;
 import ru.danilgordienko.film_storage.exception.ElasticsearchConnectionException;
@@ -79,14 +80,14 @@ public class UserServiceImpl implements UserService {
     }
 
     // поиск пользователя по имени из Elasticsearch
-    public List<UserInfoDto> searchUserByUsername(String query){
+    public List<UserListDto> searchUserByUsername(String query){
         try {
             log.info("Поиск пользователей в Elasticsearch по имени: {}", query);
 
-            var searchResults = userSearchRepository.searchByUsername(query);
+            var searchResults = userSearchRepository.searchByUsernameContaining(query);
 
             var users = searchResults.stream()
-                    .map(userMapping::toUserInfoDto)
+                    .map(userMapping::toUserListDto)
                     .toList();
 
             log.info("Найдено {} пользователей в Elasticsearch по запросу '{}'", users.size(), query);

@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieDetailsDto;
 import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieListDto;
@@ -118,6 +119,15 @@ public class MovieController {
 
         log.info("По запросу '{}' найдено {} фильмов", query, movies.getContent().size());
         return ResponseEntity.ok(movies);
+    }
+
+    @PostMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> deleteMovie(@RequestParam("id") Long id){
+        log.info("Запрос на удаление фильма с id: {}", id);
+        movieService.deleteMovie(id);
+        log.info("Фильм с id: {} успешно удален", id);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/init")

@@ -3,6 +3,8 @@ package ru.danilgordienko.film_storage.service;
 import org.springframework.stereotype.Service;
 import ru.danilgordienko.film_storage.DTO.UsersDto.UserFriendsDto;
 import ru.danilgordienko.film_storage.DTO.UsersDto.UserInfoDto;
+import ru.danilgordienko.film_storage.DTO.UsersDto.UserListDto;
+
 import java.util.List;
 
 @Service
@@ -14,6 +16,6 @@ public interface FriendshipService {
     void acceptFriendRequest(String username, Long requesterId);
     void declineFriendRequest(String username, Long requesterId);
     void removeFriend(String username, Long friendId);
-    List<UserInfoDto> getIncomingRequests(String username);
-    List<UserInfoDto> getOutgoingRequests(String username);
+    List<UserListDto> getIncomingRequests(String username);
+    List<UserListDto> getOutgoingRequests(String username);
 }

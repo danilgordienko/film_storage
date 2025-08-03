@@ -8,12 +8,6 @@ import ru.danilgordienko.film_storage.MovieAPI.MovieApiClient;
 import ru.danilgordienko.film_storage.model.Movie;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 @Service
 public interface MovieService {
@@ -26,4 +20,6 @@ public interface MovieService {
     byte[] getPoster(Long id);
     boolean getPopularMovies();
     void populateMovies(MovieApiClient.MoviesReceivedEvent event);
+    void deleteMovie(Long id);
+    void addMovie(Long id);
 }

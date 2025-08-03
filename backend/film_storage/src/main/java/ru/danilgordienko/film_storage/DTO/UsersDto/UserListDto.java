@@ -3,7 +3,7 @@ package ru.danilgordienko.film_storage.DTO.UsersDto;
 import lombok.Data;
 
 @Data
-public class UserInfoDto {
+public class UserListDto {
     private Long id;
     private String email;
     private String username;

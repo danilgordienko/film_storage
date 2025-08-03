@@ -4,6 +4,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 import ru.danilgordienko.film_storage.DTO.UsersDto.UserFriendsDto;
 import ru.danilgordienko.film_storage.DTO.UsersDto.UserInfoDto;
+import ru.danilgordienko.film_storage.DTO.UsersDto.UserListDto;
 import ru.danilgordienko.film_storage.model.User;
 
 import java.util.List;
@@ -13,7 +14,7 @@ public interface UserService extends UserDetailsService {
 
     User getUserByUsername(String username);
     User getUserById(Long id);
-    List<UserInfoDto> searchUserByUsername(String query);
+    List<UserListDto> searchUserByUsername(String query);
     void saveUser(User user);
     UserInfoDto getUserInfo(Long id);
     UserFriendsDto getUserFriends(Long id);

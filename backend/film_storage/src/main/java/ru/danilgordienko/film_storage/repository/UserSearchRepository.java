@@ -7,6 +7,6 @@ import java.util.List;
 
 public interface UserSearchRepository extends ElasticsearchRepository<UserDocument, Long> {
 
-    List<UserDocument> searchByUsername(String username);
+    List<UserDocument> searchByUsernameContaining(String username);
 
 }

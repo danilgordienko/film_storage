@@ -230,12 +230,28 @@ public class MovieServiceImpl implements MovieService {
     }
 
     // Заполнение базы данных недавно вышедшими фильмами
+    @Override
     @Transactional
     @EventListener(MovieApiClient.MoviesReceivedEvent .class)
     public void populateMovies(MovieApiClient.MoviesReceivedEvent event) {
         log.info("Сохранение недавно вышедших фильмов");
         List<MovieDto> movies = event.getMovies();
         saveReceivedMovies(movies);
+    }
+
+    // удаление фильма(только для админов)
+    @Override
+    @Transactional
+    public void deleteMovie(Long id) {
+        if (movieRepository.existsById(id)) {
+            movieRepository.deleteById(id);
+            movieSearchRepository.deleteById(id);
+        }
+    }
+
+    @Override
+    public void addMovie(Long id) {
+
     }
 
     // сохранение фильмов в бд
