@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -56,6 +57,15 @@ public class UserController {
 
         log.info("По запросу '{}' найдено {} пользователей", query, users.size());
         return ResponseEntity.ok(users);
+    }
+
+    @PostMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> deleteUser(@RequestParam Long id) {
+        log.info("POST /api/users/id - запрос на удаление пользователя с id: {}", id);
+        userService.deleteUser(id);
+        log.info("Пользователь с id: {} успешно удален", id);
+        return ResponseEntity.ok().build();
     }
 
 }

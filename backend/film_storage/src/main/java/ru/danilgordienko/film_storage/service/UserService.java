@@ -19,4 +19,5 @@ public interface UserService extends UserDetailsService {
     UserInfoDto getUserInfo(Long id);
     UserFriendsDto getUserFriends(Long id);
     UserInfoDto getUserInfoByUsername(String username);
+    void deleteUser(Long id);
 }

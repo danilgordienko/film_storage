@@ -19,10 +19,7 @@ import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieListDto;
 import ru.danilgordienko.film_storage.DTO.PageDto;
 import ru.danilgordienko.film_storage.DTO.mapping.MovieMapping;
 import ru.danilgordienko.film_storage.MovieAPI.MovieApiClient;
-import ru.danilgordienko.film_storage.exception.DatabaseConnectionException;
-import ru.danilgordienko.film_storage.exception.ElasticsearchConnectionException;
-import ru.danilgordienko.film_storage.exception.MovieNotFoundException;
-import ru.danilgordienko.film_storage.exception.MovieSaveException;
+import ru.danilgordienko.film_storage.exception.*;
 import ru.danilgordienko.film_storage.model.*;
 import ru.danilgordienko.film_storage.repository.GenreRepository;
 import ru.danilgordienko.film_storage.repository.MovieRepository;
@@ -246,7 +243,9 @@ public class MovieServiceImpl implements MovieService {
         if (movieRepository.existsById(id)) {
             movieRepository.deleteById(id);
             movieSearchRepository.deleteById(id);
+            return;
         }
+        throw new MovieNotFoundException("Фильма с id " + id + "не существует");
     }
 
     @Override

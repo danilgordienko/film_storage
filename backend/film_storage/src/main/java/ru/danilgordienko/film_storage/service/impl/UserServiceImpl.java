@@ -141,6 +141,16 @@ public class UserServiceImpl implements UserService {
         return userMapping.toUserInfoDto(user);
     }
 
+    //Удаление пользователя по id(только для админов)
+    @Override
+    public void deleteUser(Long id) {
+        if(userRepository.existsById(id)){
+            userRepository.deleteById(id);
+            userSearchRepository.deleteById(id);
+            return;
+        }
+        throw new UserNotFoundException("Пользователя с id " + id + "не существует");
+    }
 
 
 }
