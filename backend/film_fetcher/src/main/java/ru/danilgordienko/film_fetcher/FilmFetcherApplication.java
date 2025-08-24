@@ -20,6 +20,11 @@ public class FilmFetcherApplication {
 		System.setProperty("RABBITMQ_PORT", dotenv.get("RABBITMQ_PORT"));
 		System.setProperty("RABBITMQ_USERNAME", dotenv.get("RABBITMQ_USERNAME"));
 		System.setProperty("RABBITMQ_PASSWORD", dotenv.get("RABBITMQ_PASSWORD"));
+		System.setProperty("DB_USERNAME", dotenv.get("DB_USERNAME"));
+		System.setProperty("DB_PASSWORD", dotenv.get("DB_PASSWORD"));
+		System.setProperty("DB_PORT", dotenv.get("DB_PORT"));
+		System.setProperty("DB_NAME", dotenv.get("DB_NAME"));
+		System.setProperty("DB_HOST", dotenv.get("DB_HOST"));
 		SpringApplication.run(FilmFetcherApplication.class, args);
 	}
 

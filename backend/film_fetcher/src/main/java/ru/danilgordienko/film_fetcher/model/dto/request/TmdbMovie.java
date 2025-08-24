@@ -1,14 +1,12 @@
-package ru.danilgordienko.film_fetcher.model;
+package ru.danilgordienko.film_fetcher.model.dto.request;
 
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
-import java.util.Set;
 
 
 //класс представляющий фильм, полученный с tmdb

@@ -1,8 +1,6 @@
-package ru.danilgordienko.film_fetcher.model;
+package ru.danilgordienko.film_fetcher.model.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import lombok.*;
 
@@ -16,5 +14,4 @@ public class Genre {
     private Long tmdbId;
 
     private String name;
-
 }

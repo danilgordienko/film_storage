@@ -1,41 +1,42 @@
-package ru.danilgordienko.film_fetcher.service;
+package ru.danilgordienko.film_fetcher.service.impl;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import ru.danilgordienko.film_fetcher.config.RabbitConfig;
-import ru.danilgordienko.film_fetcher.model.TmdbMovie;
-import ru.danilgordienko.film_fetcher.model.TmdbResponse;
-import ru.danilgordienko.film_fetcher.model.Genre;
+import ru.danilgordienko.film_fetcher.model.dto.request.TmdbMovie;
+import ru.danilgordienko.film_fetcher.model.dto.response.TmdbResponse;
+import ru.danilgordienko.film_fetcher.model.dto.request.Genre;
+import ru.danilgordienko.film_fetcher.model.enums.RetryableTaskType;
+import ru.danilgordienko.film_fetcher.service.MovieApiService;
+import ru.danilgordienko.film_fetcher.service.RetryableTaskService;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class TmdbService {
+public class TmdbApiService implements MovieApiService {
+
+    private final RetryableTaskService retryableTaskService;
 
     @Value("${app.key}")
     private String API_KEY;
     private final WebClient webClient;
     private Map<Long, Genre> genres = new HashMap<>();
 
-    private final RabbitTemplate rabbitTemplate;
 
     private String getGenreUrl() {
         return "https://api.themoviedb.org/3/genre/movie/list?api_key=" + API_KEY + "&language=ru-RU";
@@ -43,6 +44,10 @@ public class TmdbService {
 
     private String getMovieUrl() {
         return "https://api.themoviedb.org/3/movie/popular?api_key=" + API_KEY + "&language=ru-RU";
+    }
+
+    private String getImageUrl() {
+        return "https://image.tmdb.org/t/p/w500/";
     }
 
     private String getRecentMovieUrl() {
@@ -56,20 +61,14 @@ public class TmdbService {
                 "&vote_average.gte=6";
     }
 
-    private void sendMovies(List<TmdbMovie> movies) {
-        log.info("Sending movies");
-        rabbitTemplate.convertAndSend(
-                RabbitConfig.EXCHANGE,
-                RabbitConfig.ROUTING_KEY,
-                movies
-        );
-    }
-
-    @Scheduled(cron = "0 0 3 * * MON")
-    //@Scheduled(cron = "0 * * * * *")
+    //@Scheduled(cron = "0 0 3 * * MON")
+    @Scheduled(cron = "0 * * * * *")
     public void populateMovies(){
-        getPopularMovies()
-                .doOnNext(this::sendMovies)
+        getRecentlyReleasedMovies(7)
+                .doOnNext(movies -> {
+                        retryableTaskService.createRetryableTask(movies, RetryableTaskType.SEND_MOVIE_REQUEST);
+                        log.debug("Задача на отправку {} фильмов получена", movies.size());
+                })
                 .subscribe();
     }
 
@@ -78,6 +77,7 @@ public class TmdbService {
         return downloadPoster(posterPath).block();
     }
 
+    @Override
     public Mono<List<TmdbMovie>> getPopularMovies() {
         log.info("Getting popular movies");
         loadGenres();
@@ -103,12 +103,13 @@ public class TmdbService {
                 });
     }
 
+    @Override
     public Mono<byte[]> downloadPoster(String posterPath) {
         if (posterPath == null || posterPath.isBlank()) {
             return Mono.just(new byte[0]);
         }
 
-        String imageUrl = "https://image.tmdb.org/t/p/w500/" + posterPath;
+        String imageUrl = getImageUrl() + posterPath;
         log.info("Fetching poster from: {}", imageUrl);
         return webClient.get()
                 .uri(imageUrl)
@@ -159,8 +160,9 @@ public class TmdbService {
                 .subscribe(); // Триггерим выполнение запроса
     }
 
+    @Override
     public Mono<List<TmdbMovie>> getRecentlyReleasedMovies(int days) {
-        loadGenres(); // важно для сопоставления жанров
+        loadGenres();
 
         LocalDate today = LocalDate.now();
         LocalDate startDate = today.minusDays(days);
