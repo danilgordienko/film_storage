@@ -26,7 +26,10 @@ public class TmdbApiController {
 
     @GetMapping("/movies/popular")
     public Mono<List<TmdbMovie>> getPopularMovies() {
-        return tmdbApiService.getPopularMovies();
+        log.info("GET /movies/popular, получен запрос на поллучение популярных фильмов");
+        var response = tmdbApiService.getPopularMovies();
+        log.info("Популярные фильмы успешно получены");
+        return response;
     }
 
 //    @PostMapping("/movies/send/popular")
@@ -36,19 +39,24 @@ public class TmdbApiController {
 
     @GetMapping("/movies/recent")
     public Mono<List<TmdbMovie>> getRecentMovies() {
-        return tmdbApiService.getRecentlyReleasedMovies(7);
+        log.info("GET /movies/recent, получен запрос на поллучение недавно вышедших фильмов");
+        var response = tmdbApiService.getRecentlyReleasedMovies(7);
+        log.info("Недавно вышедшие фильмы успешно получены");
+        return response;
     }
 
     @GetMapping(value = "/posters/{posterPath}", produces = MediaType.IMAGE_JPEG_VALUE)
     public Mono<ResponseEntity<byte[]>> downloadPoster(@PathVariable String posterPath) {
-        log.info("Downloading image from {}", posterPath);
+        log.info("GET /poster/{}, получен запрос на получение постера", posterPath);
         return tmdbApiService.downloadPoster(posterPath)
                 .map(bytes -> {
                     if (bytes.length > 0) {
+                        log.info("Постер {} успешно получен", posterPath);
                         return ResponseEntity.ok()
                                 .contentType(MediaType.IMAGE_JPEG)
                                 .body(bytes);
                     }
+                    log.warn("Постер {} не найден",  posterPath);
                     return ResponseEntity.notFound().build();
                 });
     }
