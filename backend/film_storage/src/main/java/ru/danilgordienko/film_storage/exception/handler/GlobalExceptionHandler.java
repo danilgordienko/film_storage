@@ -2,6 +2,7 @@ package ru.danilgordienko.film_storage.exception.handler;
 
 import org.hibernate.MappingException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 
 import org.springframework.dao.DataAccessException;
@@ -108,6 +109,18 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleMappingException(MappingException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body("Ошибка при преобразовании данных. " + ex.getMessage());
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<String> handleMissingServletRequestParameterException(MissingServletRequestParameterException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body("Ошибка при запросе. " + ex.getMessage());
+    }
+
+    @ExceptionHandler(UserUpdateException.class)
+    public ResponseEntity<String> handleUserUpdateException(UserUpdateException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body("Ошибка при изменении пользователя. " + ex.getMessage());
     }
 }
 

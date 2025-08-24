@@ -2,9 +2,8 @@ package ru.danilgordienko.film_storage.service;
 
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
-import ru.danilgordienko.film_storage.DTO.UsersDto.UserFriendsDto;
-import ru.danilgordienko.film_storage.DTO.UsersDto.UserInfoDto;
-import ru.danilgordienko.film_storage.DTO.UsersDto.UserListDto;
+import org.springframework.web.multipart.MultipartFile;
+import ru.danilgordienko.film_storage.DTO.UsersDto.*;
 import ru.danilgordienko.film_storage.model.User;
 
 import java.util.List;
@@ -20,4 +19,9 @@ public interface UserService extends UserDetailsService {
     UserFriendsDto getUserFriends(Long id);
     UserInfoDto getUserInfoByUsername(String username);
     void deleteUser(Long id);
+    void updateUserProfile(UserProfileUpdateDto userProfileUpdateDto,
+                    MultipartFile profileImage,
+                    String username);
+    void updateUserPassword(UserChangePasswordDto  userChangePasswordDto,
+                            String username);
 }

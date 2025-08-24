@@ -7,23 +7,24 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
-import ru.danilgordienko.film_storage.DTO.UsersDto.UserFriendsDto;
-import ru.danilgordienko.film_storage.DTO.UsersDto.UserInfoDto;
-import ru.danilgordienko.film_storage.DTO.UsersDto.UserListDto;
+import org.springframework.web.multipart.MultipartFile;
+import ru.danilgordienko.film_storage.DTO.UsersDto.*;
 import ru.danilgordienko.film_storage.DTO.mapping.UserMapping;
 import ru.danilgordienko.film_storage.exception.DatabaseConnectionException;
 import ru.danilgordienko.film_storage.exception.ElasticsearchConnectionException;
 import ru.danilgordienko.film_storage.exception.UserNotFoundException;
+import ru.danilgordienko.film_storage.exception.UserUpdateException;
 import ru.danilgordienko.film_storage.model.User;
 import ru.danilgordienko.film_storage.repository.UserRepository;
 import ru.danilgordienko.film_storage.repository.UserSearchRepository;
 import ru.danilgordienko.film_storage.security.UserDetailsImpl;
 import ru.danilgordienko.film_storage.service.UserService;
 
+import java.io.IOException;
 import java.util.List;
 
 @Service
@@ -31,9 +32,10 @@ import java.util.List;
 @Slf4j
 public class UserServiceImpl implements UserService {
 
-    private UserRepository userRepository;
-    private UserMapping userMapping;
-    private UserSearchRepository  userSearchRepository;
+    private final UserRepository userRepository;
+    private final UserMapping userMapping;
+    private final UserSearchRepository  userSearchRepository;
+    private final PasswordEncoder passwordEncoder;
 
     //загрузка пользователей по username. нужен для spring security для авторизации пользователя
     @Override
@@ -85,10 +87,11 @@ public class UserServiceImpl implements UserService {
             log.info("Поиск пользователей в Elasticsearch по имени: {}", query);
 
             var searchResults = userSearchRepository.searchByUsernameContaining(query);
-
             var users = searchResults.stream()
-                    .map(userMapping::toUserListDto)
-                    .toList();
+                    .map(user -> {
+                        var u = getUserById(user.getId());
+                        return userMapping.toUserListDto(u);
+                    }).toList();
 
             log.info("Найдено {} пользователей в Elasticsearch по запросу '{}'", users.size(), query);
 
@@ -143,6 +146,7 @@ public class UserServiceImpl implements UserService {
 
     //Удаление пользователя по id(только для админов)
     @Override
+    @Transactional
     public void deleteUser(Long id) {
         if(userRepository.existsById(id)){
             userRepository.deleteById(id);
@@ -150,6 +154,50 @@ public class UserServiceImpl implements UserService {
             return;
         }
         throw new UserNotFoundException("Пользователя с id " + id + "не существует");
+    }
+
+    @Override
+    @Transactional
+    public void updateUserProfile(UserProfileUpdateDto userProfileUpdateDto,
+                                  MultipartFile avatar,
+                                  String username) {
+        try {
+            User user = getUserByUsername(username);
+            if (userProfileUpdateDto.getEmail() != null)
+                user.setEmail(userProfileUpdateDto.getEmail());
+            if (userProfileUpdateDto.getUsername() != null)
+                user.setUsername(userProfileUpdateDto.getUsername());
+            if (!avatar.isEmpty() || avatar == null) {
+                user.setAvatar(avatar.getBytes());
+                userRepository.save(user);
+            }
+        } catch (IOException e) {
+            throw new UserUpdateException("ошибка при чтении файла");
+        }
+    }
+
+    @Override
+    @Transactional
+    public void updateUserPassword(UserChangePasswordDto userChangePasswordDto, String username) {
+        try {
+            if (!userChangePasswordDto.getNewPassword().equals(userChangePasswordDto.getNewPasswordConfirm())) {
+                throw new UserUpdateException("пароли не совпадают");
+            }
+
+            final User savedUser = getUserByUsername(username);
+
+            if (!passwordEncoder.matches(userChangePasswordDto.getOldPassword(),
+                    savedUser.getPassword())) {
+                throw new UserUpdateException("неверный пароль");
+            }
+
+            final String encodedPassword = passwordEncoder.encode(userChangePasswordDto.getNewPassword());
+            savedUser.setPassword(encodedPassword);
+            userRepository.save(savedUser);
+        } catch (DataAccessException e) {
+            log.error("Ошибка сохранения в БД", e);
+            throw new DatabaseConnectionException("Не удалось сохранить пользователя в БД", e);
+        }
     }
 
 

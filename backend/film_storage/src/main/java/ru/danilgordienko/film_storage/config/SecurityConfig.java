@@ -33,11 +33,6 @@ public class SecurityConfig {
         this.userService = userService;
     }
 
-//    @Bean
-//    public RestTemplate restTemplate() {
-//        return new RestTemplate();
-//    }
-
     /**
      * Определение AuthenticationManager, который управляет процессом аутентификации.
      * (возвращаем тот, который Spring создает автоматически)
@@ -79,13 +74,5 @@ public class SecurityConfig {
                 //добавляем jwt фильтр перед страндартной проверкой логина и пароля
                 .addFilterBefore(new JWTAuthenticationFilter(jwtCore, userService), UsernamePasswordAuthenticationFilter.class)
                 .build();
-    }
-
-    /**
-     * Задаем способ кодировки для пароля
-     */
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
     }
 }
