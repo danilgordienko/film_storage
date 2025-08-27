@@ -20,6 +20,9 @@ const Header = ({ userAvatarUrl }) => {
         <NavLink to="/favorites" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
           Избранное
         </NavLink>
+        <NavLink to="/recommendations" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+          Рекомендации
+        </NavLink>
       </nav>
 
       <nav className="nav-right">
@@ -27,8 +30,21 @@ const Header = ({ userAvatarUrl }) => {
           Профиль
         </NavLink>
         <NavLink to="/profile/me" className="avatar-link">
-          <img src={userAvatarUrl} alt="Аватар пользователя" className="avatar" />
+          {userAvatarUrl ? (
+            <img
+              src={`data:image/png;base64,${userAvatarUrl}`}
+              alt="Аватар пользователя"
+              className="avatar"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = '/default-avatar.png';
+              }}
+            />
+          ) : (
+            <div className="avatar"></div>
+          )}
         </NavLink>
+
       </nav>
     </header>
   );

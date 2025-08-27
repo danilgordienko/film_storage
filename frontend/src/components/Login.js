@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'; 
 import { Link, useNavigate } from 'react-router-dom';
 import '../styles/Auth.css';
-
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -26,8 +25,13 @@ const Login = () => {
         return;
       }
 
-      const token = await response.text();
-      localStorage.setItem('token', token);
+      // теперь парсим JSON, а не text
+      const { access_token, refresh_token } = await response.json();
+
+      // сохраняем оба токена
+      localStorage.setItem('access_token', access_token);
+      localStorage.setItem('refresh_token', refresh_token);
+
       navigate('/movies');
     } catch (err) {
       alert('Ошибка соединения с сервером');

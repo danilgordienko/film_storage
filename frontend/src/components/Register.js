@@ -26,8 +26,12 @@ const Register = () => {
         return;
       }
 
-      alert('Регистрация успешна. Теперь вы можете войти.');
-      navigate('/login');
+       const { access_token, refresh_token } = await response.json();
+
+       localStorage.setItem('access_token', access_token);
+       localStorage.setItem('refresh_token', refresh_token);
+ 
+       navigate('/movies');
     } catch (err) {
       alert('Ошибка соединения с сервером');
     }

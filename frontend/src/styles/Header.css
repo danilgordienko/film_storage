@@ -15,10 +15,16 @@
   z-index: 1000;
 }
 
-.nav-left, .nav-right {
+.nav-left {
   display: flex;
   align-items: center;
   gap: 20px;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .nav-link {
@@ -41,22 +47,22 @@
   font-weight: 600;
 }
 
-/* Уменьшаем отступ между профилем и аватаром */
 .profile-link {
-  margin-right: 4px; /* было 8px */
+  margin-right: 2px; 
 }
 
 .avatar-link {
   display: flex;
   align-items: center;
+  background-color: #222;
 }
 
 .avatar {
   width: 36px;
   height: 36px;
-  border-radius: 50%;
+  border-radius: 10%;
   object-fit: cover;
-  border: 2px solid #007bff;
+  border: 2px solid #222;
   cursor: pointer;
   transition: transform 0.2s;
 }

@@ -2,6 +2,53 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/Friends.css';
 
+async function authFetch(url, options = {}) {
+  let accessToken = localStorage.getItem('access_token');
+  const refreshToken = localStorage.getItem('refresh_token');
+
+  const doFetch = async (token) => {
+    return fetch(url, {
+      ...options,
+      headers: {
+        ...(options.headers || {}),
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  };
+
+  let res = await doFetch(accessToken);
+
+  if (res.status === 403 && refreshToken) {
+    // пробуем обновить токен
+    const refreshRes = await fetch('http://localhost:8081/api/auth/token/refresh', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${refreshToken}`,
+      },
+    });
+
+    if (refreshRes.ok) {
+      const { access_token, refresh_token } = await refreshRes.json();
+
+      // сохраняем новые токены
+      localStorage.setItem('access_token', access_token);
+      localStorage.setItem('refresh_token', refresh_token);
+
+      // повторяем запрос с новым access_token
+      res = await doFetch(access_token);
+    } else {
+      // refresh тоже просрочен — уходим на login
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      window.location.href = '/login';
+      return; // чтобы дальше не выполнялось
+    }
+  }
+
+  return res;
+}
+
 function Friends() {
   const [activeTab, setActiveTab] = useState('search');
   const [searchQuery, setSearchQuery] = useState('');
@@ -9,19 +56,14 @@ function Friends() {
   const [incomingRequests, setIncomingRequests] = useState([]);
   const [outgoingRequests, setOutgoingRequests] = useState([]);
   const navigate = useNavigate();
-  const token = localStorage.getItem('token');
-  const headers = { 
-    Authorization: `Bearer ${token}`,
-    'Content-Type': 'application/json'
-  };
 
   // Поиск пользователей
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
     try {
-      const res = await fetch(`http://localhost:8081/api/users/search?query=${encodeURIComponent(searchQuery)}`, {
-        headers,
-      });
+      const res = await authFetch(
+        `http://localhost:8081/api/users/search?query=${encodeURIComponent(searchQuery)}`
+      );
       if (res.ok) {
         const data = await res.json();
         setSearchResults(data);
@@ -30,32 +72,35 @@ function Friends() {
       }
     } catch (err) {
       console.error('Ошибка при поиске:', err);
+      if (err.message.includes('Сессия истекла')) navigate('/login');
     }
   };
 
   // Загрузить входящие заявки
   const fetchIncomingRequests = async () => {
     try {
-      const res = await fetch(`http://localhost:8081/api/friends/requests/incoming`, { headers });
+      const res = await authFetch('http://localhost:8081/api/friends/requests/incoming');
       if (res.ok) {
         const data = await res.json();
         setIncomingRequests(data);
       }
     } catch (err) {
       console.error('Ошибка загрузки входящих:', err);
+      if (err.message.includes('Сессия истекла')) navigate('/login');
     }
   };
 
   // Загрузить исходящие заявки
   const fetchOutgoingRequests = async () => {
     try {
-      const res = await fetch(`http://localhost:8081/api/friends/requests/outgoing`, { headers });
+      const res = await authFetch('http://localhost:8081/api/friends/requests/outgoing');
       if (res.ok) {
         const data = await res.json();
         setOutgoingRequests(data);
       }
     } catch (err) {
       console.error('Ошибка загрузки исходящих:', err);
+      if (err.message.includes('Сессия истекла')) navigate('/login');
     }
   };
 
@@ -66,9 +111,8 @@ function Friends() {
 
   const handleSendRequest = async (id) => {
     try {
-      const response = await fetch(`http://localhost:8081/api/friends/request/${id}`, {
+      const response = await authFetch(`http://localhost:8081/api/friends/request/${id}`, {
         method: 'POST',
-        headers,
       });
       if (response.ok) {
         alert('Заявка отправлена');
@@ -77,15 +121,15 @@ function Friends() {
       }
     } catch (err) {
       console.error('Ошибка при отправке заявки:', err);
+      if (err.message.includes('Сессия истекла')) navigate('/login');
       alert('Ошибка при отправке заявки');
     }
   };
 
   const handleAccept = async (id) => {
     try {
-      const response = await fetch(`http://localhost:8081/api/friends/accept/${id}`, {
+      const response = await authFetch(`http://localhost:8081/api/friends/accept/${id}`, {
         method: 'POST',
-        headers,
       });
       if (response.ok) {
         fetchIncomingRequests();
@@ -95,15 +139,15 @@ function Friends() {
       }
     } catch (err) {
       console.error('Ошибка при принятии заявки:', err);
+      if (err.message.includes('Сессия истекла')) navigate('/login');
       alert('Ошибка при принятии заявки');
     }
   };
 
   const handleDecline = async (id) => {
     try {
-      const response = await fetch(`http://localhost:8081/api/friends/decline/${id}`, {
+      const response = await authFetch(`http://localhost:8081/api/friends/decline/${id}`, {
         method: 'POST',
-        headers,
       });
       if (response.ok) {
         fetchIncomingRequests();
@@ -113,6 +157,7 @@ function Friends() {
       }
     } catch (err) {
       console.error('Ошибка при отклонении заявки:', err);
+      if (err.message.includes('Сессия истекла')) navigate('/login');
       alert('Ошибка при отклонении заявки');
     }
   };
@@ -125,9 +170,7 @@ function Friends() {
             <div className="friend-avatar"></div>
             <span>{user.username}</span>
           </div>
-          <div className="friend-actions">
-            {actionButtons(user)}
-          </div>
+          <div className="friend-actions">{actionButtons(user)}</div>
         </li>
       ))}
     </ul>
@@ -137,13 +180,22 @@ function Friends() {
     <div className="friends-page">
       <h2>Друзья</h2>
       <div className="tabs">
-        <button className={activeTab === 'search' ? 'active' : ''} onClick={() => setActiveTab('search')}>
+        <button
+          className={activeTab === 'search' ? 'active' : ''}
+          onClick={() => setActiveTab('search')}
+        >
           Найти друзей
         </button>
-        <button className={activeTab === 'incoming' ? 'active' : ''} onClick={() => setActiveTab('incoming')}>
+        <button
+          className={activeTab === 'incoming' ? 'active' : ''}
+          onClick={() => setActiveTab('incoming')}
+        >
           Входящие заявки
         </button>
-        <button className={activeTab === 'outgoing' ? 'active' : ''} onClick={() => setActiveTab('outgoing')}>
+        <button
+          className={activeTab === 'outgoing' ? 'active' : ''}
+          onClick={() => setActiveTab('outgoing')}
+        >
           Исходящие заявки
         </button>
       </div>
@@ -161,7 +213,7 @@ function Friends() {
               <button onClick={handleSearch}>Найти</button>
             </div>
             {renderUserList(searchResults, (user) => (
-              <button 
+              <button
                 className="friend-action-btn"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -181,7 +233,7 @@ function Friends() {
             ) : (
               renderUserList(incomingRequests, (user) => (
                 <>
-                  <button 
+                  <button
                     className="friend-action-btn accept"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -190,7 +242,7 @@ function Friends() {
                   >
                     Принять
                   </button>
-                  <button 
+                  <button
                     className="friend-action-btn decline"
                     onClick={(e) => {
                       e.stopPropagation();

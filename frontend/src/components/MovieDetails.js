@@ -13,19 +13,59 @@ const MovieDetails = () => {
     fetchMovie();
   }, [id]);
 
-  const fetchMovie = async () => {
-    const token = localStorage.getItem('token');
-    try {
-      const response = await fetch(`http://localhost:8081/api/movies/${id}`, {
+  async function authFetch(url, options = {}) {
+    let accessToken = localStorage.getItem('access_token');
+    const refreshToken = localStorage.getItem('refresh_token');
+  
+    const doFetch = async (token) => {
+      return fetch(url, {
+        ...options,
         headers: {
-          'Authorization': `Bearer ${token}`,
+          ...(options.headers || {}),
+          Authorization: `Bearer ${token}`,
         },
       });
+    };
+  
+    let res = await doFetch(accessToken);
+  
+    if (res.status === 403 && refreshToken) {
+      // пробуем обновить токен
+      const refreshRes = await fetch('http://localhost:8081/api/auth/token/refresh', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${refreshToken}`,
+        },
+      });
+  
+      if (refreshRes.ok) {
+        const { access_token, refresh_token } = await refreshRes.json();
+  
+        // сохраняем новые токены
+        localStorage.setItem('access_token', access_token);
+        localStorage.setItem('refresh_token', refresh_token);
+  
+        // повторяем запрос с новым access_token
+        res = await doFetch(access_token);
+      } else {
+        // refresh тоже просрочен — уходим на login
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        window.location.href = '/login';
+        return; // чтобы дальше не выполнялось
+      }
+    }
+  
+    return res;
+  }
 
+  const fetchMovie = async () => {
+    try {
+      const response = await authFetch(`http://localhost:8081/api/movies/${id}`);
       if (!response.ok) {
         throw new Error('Не удалось загрузить информацию о фильме');
       }
-
       const data = await response.json();
       setMovie(data);
     } catch (error) {
@@ -35,14 +75,11 @@ const MovieDetails = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem('token');
-
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:8081/api/ratings/add/movies/${id}`, {
+      const response = await authFetch(`http://localhost:8081/api/ratings/add/movies/${id}`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
