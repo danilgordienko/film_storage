@@ -119,6 +119,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     // получение нового access токена
+    @Override
     public AuthResponse refresh(String header) {
         log.info("Attempting to refresh access token using refresh token");
         String refreshToken = jwtService.getTokenFromHeader(header);
@@ -132,7 +133,9 @@ public class AuthServiceImpl implements AuthService {
 
         jwtService.validateRefreshToken(refreshToken);
 
+        User user = getUserByUsername(username);
         var accessToken = jwtService.generateAccessToken(userDetails);
+        jwtService.saveAccessToken(accessToken, user);
         var authResponse = new AuthResponse(accessToken, refreshToken);
         log.info("Access token refreshed for user: {}", username);
         return authResponse;
@@ -153,7 +156,7 @@ public class AuthServiceImpl implements AuthService {
     // получение пользователя по логину
     private User getUserByUsername(String username) {
         try {
-            return userRepository.findByUsername(username)
+            return userRepository.findByEmail(username)
                     .orElseThrow(() -> {
                         log.warn("User not found: {}", username);
                         return new UserNotFoundException("User " +

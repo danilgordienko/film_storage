@@ -30,7 +30,7 @@ public class RecommendationServiceImpl implements RecommendationService {
 
     @Transactional
     public void sendRecommendation(String username, Long receiverId, Long movieId) {
-        User sender = userService.getUserByUsername(username);
+        User sender = userService.getUserByEmail(username);
         User receiver = userService.getUserById(receiverId);
         Movie movie = movieService.getMovieById(movieId);
 
@@ -52,7 +52,7 @@ public class RecommendationServiceImpl implements RecommendationService {
 
     @Transactional
     public void cancelRecommendation(String username, Long receiverId, Long movieId) {
-        User sender = userService.getUserByUsername(username);
+        User sender = userService.getUserByEmail(username);
         User receiver = userService.getUserById(receiverId);
         Movie movie = movieService.getMovieById(movieId);
 
@@ -69,7 +69,7 @@ public class RecommendationServiceImpl implements RecommendationService {
 
     // получение рекомендаций от текущего пользоавтеля
     public List<RecommendationDto> findAllBySender(String username) {
-        User sender = userService.getUserByUsername(username);
+        User sender = userService.getUserByEmail(username);
 
         return recommendationRepository.findBySender(sender).stream()
                 .map(recommendationMapping::toRecommendationDto).toList();
@@ -77,7 +77,7 @@ public class RecommendationServiceImpl implements RecommendationService {
 
     // получение рекомендаций для текущего пользоавтеля
     public List<RecommendationDto> findAllByReceiver(String username) {
-        User receiver = userService.getUserByUsername(username);
+        User receiver = userService.getUserByEmail(username);
 
         return recommendationRepository.findByReceiver(receiver).stream()
                 .map(recommendationMapping::toRecommendationDto).toList();

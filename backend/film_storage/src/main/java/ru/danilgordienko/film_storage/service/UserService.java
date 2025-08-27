@@ -24,4 +24,6 @@ public interface UserService extends UserDetailsService {
                     String username);
     void updateUserPassword(UserChangePasswordDto  userChangePasswordDto,
                             String username);
+
+    User getUserByEmail(String email);
 }

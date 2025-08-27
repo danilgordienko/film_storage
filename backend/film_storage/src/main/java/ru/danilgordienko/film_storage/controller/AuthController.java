@@ -43,7 +43,8 @@ public class AuthController {
     }
 
     @PostMapping("token/refresh")
-    public ResponseEntity<AuthResponse> refresh(@RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<AuthResponse> refresh(
+            @RequestHeader("Authorization") String authHeader) {
         log.info("Received token refresh request");
         return ResponseEntity.ok(authService.refresh(authHeader));
     }

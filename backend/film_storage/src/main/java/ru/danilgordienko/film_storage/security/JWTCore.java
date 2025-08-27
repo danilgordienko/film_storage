@@ -53,16 +53,16 @@ public class JWTCore {
 
     // генерирует access токен
     public String generateAccessToken(UserDetails userDetails) {
-        return buildToken(userDetails,  accessExpiration);
+        return buildToken(userDetails,  accessExpiration, "access");
     }
 
     // генерирует refresh toker
     public String generateRefreshToken(UserDetails userDetails) {
-        return buildToken(userDetails,  refreshExpiration);
+        return buildToken(userDetails,  refreshExpiration, "refresh");
     }
 
     // Генерирует JWT-токен для аутентифицированного пользователя
-    private String buildToken(UserDetails userDetails, int expiration) {
+    private String buildToken(UserDetails userDetails, int expiration, String tokenType) {
         try {
             UserDetailsImpl user = (UserDetailsImpl) userDetails;
 
@@ -75,12 +75,14 @@ public class JWTCore {
                     .claim("roles", user.getAuthorities().stream()
                             .map(Object::toString)
                             .toList())
+                    .claim("token_type", tokenType)
                     .signWith(getSigningKey())
                     .compact();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
+
 
     // проверки что refresh токен корректный
     public void validateRefreshToken(String token) {
@@ -220,8 +222,18 @@ public class JWTCore {
         return null;
     }
 
+    // Извлекает тип из переданного JWT-токена
+    public String getTypeFromToken(String token) {
+        return getClaimsFromToken(token).get("token_type", String.class);
+    }
+
     // Извлекает логин из переданного JWT-токена
     public String getUsernameFromToken(String token) {
         return getClaimsFromToken(token).getSubject();
+    }
+
+    // Извлекает email из переданного JWT-токена
+    public String getEmailFromToken(String token) {
+        return getClaimsFromToken(token).get("email", String.class);
     }
 }

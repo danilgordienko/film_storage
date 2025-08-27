@@ -45,7 +45,7 @@ public class RatingServiceImpl implements RatingService {
     public void addRating(Long id, RatingDto rating, String username)
     {
         try {
-            var user = userService.getUserByUsername(username);
+            var user = userService.getUserByEmail(username);
             var movie = movieService.getMovieById(id);
 
 
@@ -103,7 +103,7 @@ public class RatingServiceImpl implements RatingService {
 
     // получение оценка пользователя по username
     public UserRatingDto getUserRatingsByUsername(String username){
-        User user = userService.getUserByUsername(username);
+        User user = userService.getUserByEmail(username);
         return userMapping.toUserRatingDto(user);
     }
 

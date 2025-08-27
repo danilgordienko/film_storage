@@ -61,8 +61,8 @@ public class TmdbApiService implements MovieApiService {
                 "&vote_average.gte=6";
     }
 
-    //@Scheduled(cron = "0 0 3 * * MON")
-    @Scheduled(cron = "0 * * * * *")
+    @Scheduled(cron = "0 0 3 * * MON")
+    //@Scheduled(cron = "0 * * * * *")
     public void populateMovies(){
         getRecentlyReleasedMovies(7)
                 .doOnNext(movies -> {

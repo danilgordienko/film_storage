@@ -34,7 +34,7 @@ public class FriendshipServiceImpl implements FriendshipService {
 
     //получение друзей текущего пользователя
     public UserFriendsDto getCurrentUserFriends(String username) {
-        User user = userService.getUserByUsername(username);
+        User user = userService.getUserByEmail(username);
         return userMapping.toUserFriendsDto(user);
     }
 
@@ -48,7 +48,7 @@ public class FriendshipServiceImpl implements FriendshipService {
     @Transactional
     public void sendFriendRequest(String username, Long targetId) {
         try {
-            var sender = userService.getUserByUsername(username);
+            var sender = userService.getUserByEmail(username);
             var reciever = userService.getUserById(targetId);
 
             if (sender.equals(reciever)) {
@@ -77,7 +77,7 @@ public class FriendshipServiceImpl implements FriendshipService {
     @Transactional
     public void acceptFriendRequest(String username, Long requesterId) {
         try {
-            var sender = userService.getUserByUsername(username);
+            var sender = userService.getUserByEmail(username);
             var reciever = userService.getUserById(requesterId);
 
             var request = friendRequestRepository.findBySenderAndReceiver(sender, reciever);
@@ -104,7 +104,7 @@ public class FriendshipServiceImpl implements FriendshipService {
     @Transactional
     public void declineFriendRequest(String username, Long requesterId) {
         try {
-            var sender = userService.getUserByUsername(username);
+            var sender = userService.getUserByEmail(username);
             var reciever = userService.getUserById(requesterId);
 
             var request = friendRequestRepository.findBySenderAndReceiver(sender, reciever);
@@ -125,7 +125,7 @@ public class FriendshipServiceImpl implements FriendshipService {
     @Transactional
     public void removeFriend(String username, Long friendId) {
         try {
-            var sender = userService.getUserByUsername(username);
+            var sender = userService.getUserByEmail(username);
             var reciever = userService.getUserById(friendId);
 
             if (!sender.getFriends().contains(reciever)) {
@@ -147,7 +147,7 @@ public class FriendshipServiceImpl implements FriendshipService {
     // получение входящих запросов в друзья для текущего пользователя
     public List<UserListDto> getIncomingRequests(String username) {
         try {
-            User user = userService.getUserByUsername(username);
+            User user = userService.getUserByEmail(username);
             return friendRequestRepository.findByReceiver(user)
                     .stream().map(r -> userMapping.toUserListDto(r.getSender())).toList();
         } catch (DataAccessException e) {
@@ -159,7 +159,7 @@ public class FriendshipServiceImpl implements FriendshipService {
     // получение отправленных запросов от текущего пользователя
     public List<UserListDto> getOutgoingRequests(String username) {
         try {
-            User user = userService.getUserByUsername(username);
+            User user = userService.getUserByEmail(username);
             return friendRequestRepository.findBySender(user)
                     .stream().map(r -> userMapping.toUserListDto(r.getReceiver())).toList();
         } catch (DataAccessException e) {

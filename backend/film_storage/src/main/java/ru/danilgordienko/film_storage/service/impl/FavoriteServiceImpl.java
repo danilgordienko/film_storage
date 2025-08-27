@@ -33,7 +33,7 @@ public class FavoriteServiceImpl implements FavoriteService {
         try {
             log.info("Добавление фильма в избранное. Пользователь: {}, Фильм ID: {}", username, id);
 
-            var user = userService.getUserByUsername(username);
+            var user = userService.getUserByEmail(username);
             var movie = movieService.getMovieById(id);
 
             if (favoriteRepository.existsByUserAndMovie(user, movie)) {
@@ -60,7 +60,7 @@ public class FavoriteServiceImpl implements FavoriteService {
         try {
             log.info("Удаление фильма из избранного. Пользователь: {}, Фильм ID: {}", username, id);
 
-            var user = userService.getUserByUsername(username);
+            var user = userService.getUserByEmail(username);
             var movie = movieService.getMovieById(id);
 
             if (!favoriteRepository.existsByUserAndMovie(user, movie)) {
@@ -77,7 +77,7 @@ public class FavoriteServiceImpl implements FavoriteService {
     }
 
     public UserFavoritesDto getUserFavoritesByUsername(String username) {
-        User user =  userService.getUserByUsername(username);
+        User user =  userService.getUserByEmail(username);
         return userMapping.toUserFavoritesDto(user);
     }
 }

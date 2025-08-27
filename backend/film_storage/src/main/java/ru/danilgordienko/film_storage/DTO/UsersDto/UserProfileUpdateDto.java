@@ -2,13 +2,25 @@ package ru.danilgordienko.film_storage.DTO.UsersDto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Data
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class UserProfileUpdateDto {
-    //@NotBlank(message = "Логин не может быть пустым")
     private String username;
-    //@NotBlank(message = "Email не может быть пустым")
     @Email
     private String email;
+
+    public String getEmail() {
+        return this.email;
+    }
+
+    public String getUsername() {
+        return this.username;
+    }
+
 }

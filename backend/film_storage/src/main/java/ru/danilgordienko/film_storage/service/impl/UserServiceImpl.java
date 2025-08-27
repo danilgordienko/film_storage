@@ -39,19 +39,20 @@ public class UserServiceImpl implements UserService {
 
     //загрузка пользователей по username. нужен для spring security для авторизации пользователя
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        log.info("Поиск пользователя по имени: {}", username);
-        User user = userRepository.findByUsername(username)
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        log.info("Поиск пользователя по email: {}", email);
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> {
-                    log.warn("Пользователь '{}' не найден", username);
-                    return new UsernameNotFoundException(username + " not found");
+                    log.warn("Пользователь '{}' не найден", email);
+                    return new UsernameNotFoundException(email + " not found");
                 });
 
-        log.info("Пользователь '{}' найден, возвращаем UserDetails", username);
+        log.info("Пользователь '{}' найден, возвращаем UserDetails", email);
         return UserDetailsImpl.build(user);
     }
 
     //получение пользователей по username.
+    @Override
     public User getUserByUsername(String username) {
         try {
             log.info("Поиск пользователя по имени: {}", username);
@@ -66,7 +67,24 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+    //получение пользователей по username.
+    @Override
+    public User getUserByEmail(String email) {
+        try {
+            log.info("Поиск пользователя по email: {}", email);
+            return userRepository.findByEmail(email)
+                    .orElseThrow(() -> {
+                        log.warn("Пользователь '{}' не найден", email);
+                        return new UserNotFoundException("Пользователь с email " + email + " не найден");
+                    });
+        } catch (DataAccessException e) {
+            log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
+            throw new DatabaseConnectionException("Ошибка подключения к базе данных", e);
+        }
+    }
+
     //получение пользователей по id.
+    @Override
     public User getUserById(Long id) {
         try {
             log.info("Получение пользователя из бд с ID = {}", id);
@@ -82,6 +100,7 @@ public class UserServiceImpl implements UserService {
     }
 
     // поиск пользователя по имени из Elasticsearch
+    @Override
     public List<UserListDto> searchUserByUsername(String query){
         try {
             log.info("Поиск пользователей в Elasticsearch по имени: {}", query);
@@ -138,9 +157,9 @@ public class UserServiceImpl implements UserService {
     }
 
 
-    // получение информации о пользователе по его username
+    // получение информации о пользователе по его email
     public UserInfoDto getUserInfoByUsername(String username){
-        User user = getUserByUsername(username);
+        User user = getUserByEmail(username);
         return userMapping.toUserInfoDto(user);
     }
 
@@ -162,15 +181,17 @@ public class UserServiceImpl implements UserService {
                                   MultipartFile avatar,
                                   String username) {
         try {
-            User user = getUserByUsername(username);
+            User user = getUserByEmail(username);
+            System.out.println("DTO class: " + userProfileUpdateDto.getClass());
+
             if (userProfileUpdateDto.getEmail() != null)
                 user.setEmail(userProfileUpdateDto.getEmail());
             if (userProfileUpdateDto.getUsername() != null)
                 user.setUsername(userProfileUpdateDto.getUsername());
-            if (!avatar.isEmpty() || avatar == null) {
+            if (avatar != null && !avatar.isEmpty()) {
                 user.setAvatar(avatar.getBytes());
-                userRepository.save(user);
             }
+            userRepository.save(user);
         } catch (IOException e) {
             throw new UserUpdateException("ошибка при чтении файла");
         }
@@ -184,7 +205,7 @@ public class UserServiceImpl implements UserService {
                 throw new UserUpdateException("пароли не совпадают");
             }
 
-            final User savedUser = getUserByUsername(username);
+            final User savedUser = getUserByEmail(username);
 
             if (!passwordEncoder.matches(userChangePasswordDto.getOldPassword(),
                     savedUser.getPassword())) {
