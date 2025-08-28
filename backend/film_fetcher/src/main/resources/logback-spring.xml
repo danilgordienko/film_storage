@@ -1,0 +1,54 @@
+<configuration>
+
+    <!-- Настройки конвертера JSON -->
+    <include resource="net/logstash/logback/logback-base.xml"/>
+
+    <!-- Настраиваем Appender для RabbitMQ -->
+    <appender name="RABBIT" class="org.springframework.amqp.rabbit.logback.AmqpAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <timestamp/>
+                <pattern>
+                    <pattern>
+                        {
+                        "service": "film_fetcher",
+                        "level": "%level",
+                        "logger": "%logger",
+                        "thread": "%thread",
+                        "message": "%message",
+                        "stack_trace": "%ex"
+                        }
+                    </pattern>
+                </pattern>
+            </providers>
+        </encoder>
+
+        <!-- Настройки подключения к RabbitMQ -->
+        <host>localhost</host>
+        <port>5672</port>
+        <username>guest</username>
+        <password>guest</password>
+
+<!--         exchange/queue для логов-->
+        <exchangeName>logs.exchange</exchangeName>
+        <routingKeyPattern>logs.key</routingKeyPattern>
+        <declareExchange>true</declareExchange>
+    </appender>
+
+    <!-- Для консоли -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Настройка уровней логирования -->
+    <root level="INFO">
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="RABBIT"/>
+    </root>
+
+</configuration>
