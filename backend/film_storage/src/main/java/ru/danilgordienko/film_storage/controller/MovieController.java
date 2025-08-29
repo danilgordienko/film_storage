@@ -30,16 +30,14 @@ public class MovieController {
      */
     @GetMapping("/all")
     public ResponseEntity<List<MovieListDto>> getAllMovies(){
-        log.info("GET /api/movies/all - fetching all movies");
+        log.info("GET /api/movies/all - Fetching all movies");
 
         List<MovieListDto> movies = movieService.getAllMovies();
-
         if (movies.isEmpty()) {
-            log.warn("No movies found");
+            log.warn("GET /api/movies/all - No movies found");
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
-
-        log.info("Returning {} movies", movies.size());
+        log.info("GET /api/movies/all - Returning {} movies", movies.size());
         return ResponseEntity.ok(movies);
     }
 
@@ -48,16 +46,16 @@ public class MovieController {
      */
     @GetMapping
     public ResponseEntity<PageDto> getMoviesPage(@RequestParam("page") int page){
-        log.info("GET /api/movies - fetching page of movies");
+        log.info("GET /api/movies - Fetching page {}", page);
 
         PageDto movies = movieService.getMoviesPage(page);
 
         if (movies.getContent().isEmpty()) {
-            log.warn("No movies found");
+            log.warn("GET /api/movies - No movies found for page {}", page);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
 
-        log.info("Returning {} movies", movies.getContent().size());
+        log.info("GET /api/movies - Returning {} movies for page {}", movies.getContent().size(), page);
         return ResponseEntity.ok(movies);
     }
 
@@ -67,77 +65,74 @@ public class MovieController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<MovieDetailsDto> getMovie(@PathVariable Long id){
-        log.info("GET /api/movies/{} - запрос фильм с id", id);
-
+        log.info("GET /api/movies/{} - Fetching movie details", id);
         MovieDetailsDto movie = movieService.getMovie(id);
+        log.info("GET /api/movies/{} - Successfully fetched movie details", id);
         return ResponseEntity.ok(movie);
     }
 
     // получение постера к фильму
     @GetMapping("/{id}/poster")
     public ResponseEntity<byte[]> getMoviePoster(@PathVariable Long id) {
-        log.info("GET /api/movies/{id}/poster - запрос постера фильма с id: {}",id);
+        log.info("GET /api/movies/{}/poster - Fetching movie poster", id);
         byte[] poster = movieService.getPoster(id);
         if (poster.length != 0) {
-            log.info("Постер фильма с id {} успешно получен", id);
+            log.info("GET /api/movies/{}/poster - Poster retrieved successfully", id);
             return ResponseEntity.ok()
                     .contentType(MediaType.IMAGE_JPEG)
                     .body(poster);
         }
-        log.info("Не удалсь получить постер фильма с id {}", id);
+        log.warn("GET /api/movies/{}/poster - Poster not found", id);
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
     // поиск всех фильмов по запросу query
     @GetMapping("/search/all")
     public ResponseEntity<List<MovieListDto>> searchMovies(@RequestParam("query") String query) {
-        log.info("GET /api/movies/search/all - поиск всех фильмов по запросу: {}", query);
+        log.info("GET /api/movies/search/all - Searching movies with query '{}'", query);
 
         List<MovieListDto> movies = movieService.searchMoviesByTitle(query);
-
         if (movies.isEmpty()) {
-            log.warn("По запросу '{}' фильмы не найдены", query);
+            log.warn("GET /api/movies/search/all - No movies found for query '{}'", query);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
-
-        log.info("По запросу '{}' найдено {} фильмов", query, movies.size());
+        log.info("GET /api/movies/search/all - Found {} movies for query '{}'", movies.size(), query);
         return ResponseEntity.ok(movies);
     }
 
     // поиск фильмов по запросу query по страницам
     @GetMapping("/search")
     public ResponseEntity<PageDto> searchMovies(@RequestParam("query") String query,
-                                                           @RequestParam("page") int page) {
-        log.info("GET /api/movies/search - поиск фильмов по запросу: {}", query);
+                                                @RequestParam("page") int page) {
+        log.info("GET /api/movies/search - Searching movies with query '{}' on page {}", query, page);
 
         PageDto movies = movieService.searchMoviesPageByTitle(query, page);
-
         if (movies.getContent().isEmpty()) {
-            log.warn("По запросу '{}' фильмы не найдены", query);
+            log.warn("GET /api/movies/search - No movies found for query '{}' on page {}", query, page);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
-
-        log.info("По запросу '{}' найдено {} фильмов", query, movies.getContent().size());
+        log.info("GET /api/movies/search - Found {} movies for query '{}' on page {}", movies.getContent().size(), query, page);
         return ResponseEntity.ok(movies);
     }
 
     @PostMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> deleteMovie(@RequestParam("id") Long id){
-        log.info("Запрос на удаление фильма с id: {}", id);
+        log.info("POST /api/movies/{id} - Deleting movie with id {}", id);
         movieService.deleteMovie(id);
-        log.info("Фильм с id: {} успешно удален", id);
+        log.info("POST /api/movies/{id} - Movie with id {} deleted successfully", id);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/init")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> initMovies(){
-        log.info("POST /api/movies/init - начальное заполнение фильмов");
+        log.info("POST /api/movies/init - Initializing movies");
         if (!movieService.getPopularMovies()) {
-            log.warn("Не удалось добавить фильмы");
+            log.warn("POST /api/movies/init - Failed to add movies");
             return ResponseEntity.badRequest().build();
         }
-        log.info("Фильмы успешно добавлены");
+        log.info("POST /api/movies/init - Movies added successfully");
         return  ResponseEntity.ok().build();
     }
 

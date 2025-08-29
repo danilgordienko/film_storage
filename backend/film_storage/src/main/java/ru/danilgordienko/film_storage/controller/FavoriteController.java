@@ -25,10 +25,10 @@ public class FavoriteController {
      */
     @PostMapping("/add/movies/{id}")
     public ResponseEntity<String> addFavorite(@PathVariable Long id,
-                                              @AuthenticationPrincipal UserDetails userDetails){
-        log.info("Запрос на добавление фильма в избранное: id={}", id);
+                                              @AuthenticationPrincipal UserDetails userDetails) {
+        log.info("[POST /api/favorites/add/movies/{}] Request to add movie to favorites by user={}", id, userDetails.getUsername());
         favoriteService.addFavorite(id, userDetails.getUsername());
-        log.info("Фильм успешно добавлен в избранное: id={}", id);
+        log.info("[POST /api/favorites/add/movies/{}] Movie successfully added to favorites by user={}", id, userDetails.getUsername());
         return ResponseEntity.ok("Favorite added");
     }
 
@@ -37,19 +37,19 @@ public class FavoriteController {
      */
     @DeleteMapping("/remove/movies/{id}")
     public ResponseEntity<String> deleteFavorite(@PathVariable Long id,
-                                                 @AuthenticationPrincipal UserDetails userDetails){
-        log.info("Запрос на удаление фильма из избранного: id={}", id);
-        favoriteService.removeFavorite(id,  userDetails.getUsername());
-        log.info("Фильм успешно удалён из избранного: id={}", id);
-        return ResponseEntity.ok("Favorite delete");
+                                                 @AuthenticationPrincipal UserDetails userDetails) {
+        log.info("[DELETE /api/favorites/remove/movies/{}] Request to remove movie from favorites by user={}", id, userDetails.getUsername());
+        favoriteService.removeFavorite(id, userDetails.getUsername());
+        log.info("[DELETE /api/favorites/remove/movies/{}] Movie successfully removed from favorites by user={}", id, userDetails.getUsername());
+        return ResponseEntity.ok("Favorite deleted");
     }
 
     //получение избранного текущего пользователя
     @GetMapping
     public ResponseEntity<UserFavoritesDto> getCurrentUserFavorites(@AuthenticationPrincipal UserDetails userDetails) {
-        log.info("Запрос избранного текущего пользователя: {}", userDetails.getUsername());
-        UserFavoritesDto  userFavoritesDto = favoriteService.getUserFavoritesByUsername(userDetails.getUsername());
-        log.info("избранное текущего пользователя {} успешно полученно", userDetails.getUsername());
+        log.info("[GET /api/favorites] Request to get current user's favorites: {}", userDetails.getUsername());
+        UserFavoritesDto userFavoritesDto = favoriteService.getUserFavoritesByUsername(userDetails.getUsername());
+        log.info("[GET /api/favorites] Favorites successfully retrieved for user={}", userDetails.getUsername());
         return ResponseEntity.ok(userFavoritesDto);
     }
 

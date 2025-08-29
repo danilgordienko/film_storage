@@ -34,20 +34,20 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final UserMapping userMapping;
-    private final UserSearchRepository  userSearchRepository;
+    private final UserSearchRepository userSearchRepository;
     private final PasswordEncoder passwordEncoder;
 
     //загрузка пользователей по username. нужен для spring security для авторизации пользователя
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        log.info("Поиск пользователя по email: {}", email);
+        log.debug("Searching for user by email: {}", email);
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> {
-                    log.warn("Пользователь '{}' не найден", email);
+                    log.warn("User '{}' not found", email);
                     return new UsernameNotFoundException(email + " not found");
                 });
 
-        log.info("Пользователь '{}' найден, возвращаем UserDetails", email);
+        log.debug("User '{}' found, returning UserDetails", email);
         return UserDetailsImpl.build(user);
     }
 
@@ -55,15 +55,15 @@ public class UserServiceImpl implements UserService {
     @Override
     public User getUserByUsername(String username) {
         try {
-            log.info("Поиск пользователя по имени: {}", username);
+            log.debug("Searching for user by username: {}", username);
             return userRepository.findByUsername(username)
                     .orElseThrow(() -> {
-                        log.warn("Пользователь '{}' не найден", username);
-                        return new UserNotFoundException("Пользователь с именем " + username + " не найден");
+                        log.warn("User '{}' not found", username);
+                        return new UserNotFoundException("User with username " + username + " not found");
                     });
         } catch (DataAccessException e) {
-            log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
-            throw new DatabaseConnectionException("Ошибка подключения к базе данных", e);
+            log.error("Database access error: {}", e.getMessage(), e);
+            throw new DatabaseConnectionException("Failed to connect to the database", e);
         }
     }
 
@@ -71,15 +71,15 @@ public class UserServiceImpl implements UserService {
     @Override
     public User getUserByEmail(String email) {
         try {
-            log.info("Поиск пользователя по email: {}", email);
+            log.debug("Searching for user by email: {}", email);
             return userRepository.findByEmail(email)
                     .orElseThrow(() -> {
-                        log.warn("Пользователь '{}' не найден", email);
-                        return new UserNotFoundException("Пользователь с email " + email + " не найден");
+                        log.warn("User '{}' not found", email);
+                        return new UserNotFoundException("User with email " + email + " not found");
                     });
         } catch (DataAccessException e) {
-            log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
-            throw new DatabaseConnectionException("Ошибка подключения к базе данных", e);
+            log.error("Database access error: {}", e.getMessage(), e);
+            throw new DatabaseConnectionException("Failed to connect to the database", e);
         }
     }
 
@@ -87,15 +87,15 @@ public class UserServiceImpl implements UserService {
     @Override
     public User getUserById(Long id) {
         try {
-            log.info("Получение пользователя из бд с ID = {}", id);
+            log.debug("Fetching user from DB with ID = {}", id);
             return userRepository.findById(id)
                     .orElseThrow(() -> {
-                        log.warn("Пользователь c id '{}' не найден", id);
-                        return new UserNotFoundException("Пользователь c id " + id + " не найден");
+                        log.warn("User with id '{}' not found", id);
+                        return new UserNotFoundException("User with id " + id + " not found");
                     });
         } catch (DataAccessException e) {
-            log.error("Ошибка подключения к БД при поиске по ID", e);
-            throw new DatabaseConnectionException("Не удалось получить пользователя из БД", e);
+            log.error("Database access error while fetching by ID", e);
+            throw new DatabaseConnectionException("Failed to fetch user from DB", e);
         }
     }
 
@@ -103,7 +103,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<UserListDto> searchUserByUsername(String query){
         try {
-            log.info("Поиск пользователей в Elasticsearch по имени: {}", query);
+            log.debug("Searching users in Elasticsearch by username: {}", query);
 
             var searchResults = userSearchRepository.searchByUsernameContaining(query);
             var users = searchResults.stream()
@@ -112,12 +112,12 @@ public class UserServiceImpl implements UserService {
                         return userMapping.toUserListDto(u);
                     }).toList();
 
-            log.info("Найдено {} пользователей в Elasticsearch по запросу '{}'", users.size(), query);
+            log.debug("Found {} users in Elasticsearch for query '{}'", users.size(), query);
 
             return users;
         } catch (ElasticsearchException | RestClientException e) {
-            log.error("Ошибка при работе с Elasticsearch", e);
-            throw new ElasticsearchConnectionException("Не удалось найти пользователя в Elasticsearch", e);
+            log.error("Elasticsearch access error", e);
+            throw new ElasticsearchConnectionException("Failed to search user in Elasticsearch", e);
         }
     }
 
@@ -126,22 +126,10 @@ public class UserServiceImpl implements UserService {
         try {
             userRepository.save(user);
         } catch (DataAccessException e) {
-            log.error("Ошибка сохранения в БД", e);
-            throw new DatabaseConnectionException("Не удалось сохранить пользователя в БД", e);
+            log.error("Database save error", e);
+            throw new DatabaseConnectionException("Failed to save user in DB", e);
         }
     }
-
-//    // проверяет зарегистрирован ли уже пользователь
-//    public boolean existsUser(String username) {
-//        try {
-//            boolean exists = userRepository.existsByUsername(username);
-//            log.info("Проверка существования пользователя '{}': {}", username, exists);
-//            return exists;
-//        } catch (DataAccessException e) {
-//            log.error("Ошибка сохранения в БД", e);
-//            throw new DatabaseConnectionException("Не удалось сохранить пользователя в БД", e);
-//        }
-//    }
 
     // получение информации о пользователе
     public UserInfoDto getUserInfo(Long id) {
@@ -149,13 +137,11 @@ public class UserServiceImpl implements UserService {
         return userMapping.toUserInfoDto(user);
     }
 
-
     // получение друзей пользователя
     public UserFriendsDto getUserFriends(Long id) {
         User user = getUserById(id);
         return userMapping.toUserFriendsDto(user);
     }
-
 
     // получение информации о пользователе по его email
     public UserInfoDto getUserInfoByUsername(String username){
@@ -172,7 +158,7 @@ public class UserServiceImpl implements UserService {
             userSearchRepository.deleteById(id);
             return;
         }
-        throw new UserNotFoundException("Пользователя с id " + id + "не существует");
+        throw new UserNotFoundException("User with id " + id + " does not exist");
     }
 
     @Override
@@ -193,7 +179,7 @@ public class UserServiceImpl implements UserService {
             }
             userRepository.save(user);
         } catch (IOException e) {
-            throw new UserUpdateException("ошибка при чтении файла");
+            throw new UserUpdateException("Error reading file");
         }
     }
 
@@ -202,24 +188,23 @@ public class UserServiceImpl implements UserService {
     public void updateUserPassword(UserChangePasswordDto userChangePasswordDto, String username) {
         try {
             if (!userChangePasswordDto.getNewPassword().equals(userChangePasswordDto.getNewPasswordConfirm())) {
-                throw new UserUpdateException("пароли не совпадают");
+                throw new UserUpdateException("Passwords do not match");
             }
 
             final User savedUser = getUserByEmail(username);
 
             if (!passwordEncoder.matches(userChangePasswordDto.getOldPassword(),
                     savedUser.getPassword())) {
-                throw new UserUpdateException("неверный пароль");
+                throw new UserUpdateException("Incorrect password");
             }
 
             final String encodedPassword = passwordEncoder.encode(userChangePasswordDto.getNewPassword());
             savedUser.setPassword(encodedPassword);
             userRepository.save(savedUser);
         } catch (DataAccessException e) {
-            log.error("Ошибка сохранения в БД", e);
-            throw new DatabaseConnectionException("Не удалось сохранить пользователя в БД", e);
+            log.error("Database save error", e);
+            throw new DatabaseConnectionException("Failed to save user in DB", e);
         }
     }
-
-
 }
+

@@ -31,9 +31,7 @@ import java.util.List;
 @Slf4j
 public class RatingServiceImpl implements RatingService {
 
-    private final UserRepository userRepository;
     private final RatingRepository ratingRepository;
-    private final MovieRepository movieRepository;
     private final MovieSearchRepository  movieSearchRepository;
     private final UserMapping  userMapping;
     private final UserService userService;
@@ -42,16 +40,14 @@ public class RatingServiceImpl implements RatingService {
 
     //добавляем рейтинг к фильму
     @Transactional
-    public void addRating(Long id, RatingDto rating, String username)
-    {
+    public void addRating(Long id, RatingDto rating, String username) {
         try {
             var user = userService.getUserByEmail(username);
             var movie = movieService.getMovieById(id);
 
-
             if (ratingRepository.existsByUserAndMovie(user, movie)) {
-                log.warn("Отзыв не добавлен: пользователь с именем '{}' уже оставлял отзыв ", username);
-                throw new RatingAlreadyExistsException("Рейтинг от пользователя "+ username + " уже был оставлен");
+                log.warn("Rating not added: user '{}' has already rated this movie", username);
+                throw new RatingAlreadyExistsException("Rating by user " + username + " already exists");
             }
 
             Rating rate = Rating.builder()
@@ -62,12 +58,14 @@ public class RatingServiceImpl implements RatingService {
                     .build();
 
             ratingRepository.save(rate);
-            // Обновляем среднюю оценку
-            // В случае если вознкнет ошибка транзакция откатится
+
+            // Update average rating in Elasticsearch
+            // Transaction will roll back if an error occurs
             updateAverageRatingInElasticsearch(movie);
+            log.debug("Rating added by user '{}' for movie '{}'", username, movie.getTitle());
         } catch (DataAccessException e) {
-            log.error("Ошибка подключения к БД при поиске по ID", e);
-            throw new DatabaseConnectionException("Не удалось получить пользователя из БД", e);
+            log.error("Database access error while fetching by ID", e);
+            throw new DatabaseConnectionException("Failed to retrieve user from DB", e);
         }
     }
 
@@ -79,14 +77,14 @@ public class RatingServiceImpl implements RatingService {
             movieSearchRepository.findById(movie.getId()).ifPresent(movieDoc -> {
                 movieDoc.setAverageRating(avgRating);
                 movieSearchRepository.save(movieDoc);
-                log.info("Средняя оценка обновлена в Elasticsearch: {}", avgRating);
+                log.debug("Average rating updated in Elasticsearch: {}", avgRating);
             });
         } catch (ElasticsearchException | RestClientException e) {
-            log.error("Ошибка при работе с Elasticsearch", e);
-            throw new ElasticsearchConnectionException("Не удалось найти пользователя в Elasticsearch", e);
+            log.error("Elasticsearch error while updating average rating", e);
+            throw new ElasticsearchConnectionException("Failed to update movie in Elasticsearch", e);
         } catch (Exception e) {
-            log.error("Непредвиденная ошибка при обнолении оценки: {}", e.getMessage(), e);
-            throw new RuntimeException("", e);
+            log.error("Unexpected error while updating rating: {}", e.getMessage(), e);
+            throw new RuntimeException("Unexpected error while updating rating", e);
         }
     }
 
@@ -102,14 +100,17 @@ public class RatingServiceImpl implements RatingService {
     }
 
     // получение оценка пользователя по username
-    public UserRatingDto getUserRatingsByUsername(String username){
+    public UserRatingDto getUserRatingsByUsername(String username) {
         User user = userService.getUserByEmail(username);
+        log.debug("Retrieving ratings for user '{}'", username);
         return userMapping.toUserRatingDto(user);
     }
 
+
     // получение оценка пользователя по id
-    public UserRatingDto getUserRatings(Long id){
+    public UserRatingDto getUserRatings(Long id) {
         User user = userService.getUserById(id);
+        log.debug("Retrieving ratings for user with ID '{}'", id);
         return userMapping.toUserRatingDto(user);
     }
 }

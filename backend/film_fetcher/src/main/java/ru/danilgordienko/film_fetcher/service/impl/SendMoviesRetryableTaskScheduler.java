@@ -27,11 +27,11 @@ public class SendMoviesRetryableTaskScheduler implements RetryableTaskScheduler 
     @Scheduled(fixedRate = 5000)
     @Override
     public void executeRetryableTask() {
-        log.debug("Обработчик задач запущен");
+        log.debug("Task handler started");
         try {
             var retryableTasks = retryableTaskService.getRetryableTasks(RetryableTaskType.SEND_MOVIE_REQUEST);
             if (retryableTasks.isEmpty()) {
-                log.debug("Ни одной задачи не найдено");
+                log.debug("No tasks found");
                 return;
             }
             List<RetryableTask> successRetryableTasks = new ArrayList<>();
@@ -39,14 +39,15 @@ public class SendMoviesRetryableTaskScheduler implements RetryableTaskScheduler 
                 var result = brokerClient.sendMovies(retryableTaskMapping.jsonToTmdbMovies(retryableTask));
                 if (result) {
                     successRetryableTasks.add(retryableTask);
-                    log.debug("Задача с id {} успешно обработана", retryableTask.getId());
+                    log.debug("Task with id {} processed successfully", retryableTask.getId());
                 } else
-                    log.warn("Не удалось обработать задачу с id {}", retryableTask.getId());
+                    log.warn("Failed to process task with id {}", retryableTask.getId());
             }
             retryableTaskService.markRetryableTasksAsCompleted(successRetryableTasks);
-            log.debug("Обработка задач завершена, обработано задач: {}", successRetryableTasks.size());
+            log.debug("Task processing finished, tasks processed: {}", successRetryableTasks.size());
         } catch (Exception e) {
-            log.error("Ошибка при обработке задач " + e.getMessage(), e);
+            log.error("Error processing tasks: " + e.getMessage(), e);
         }
     }
 }
+

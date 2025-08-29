@@ -30,12 +30,10 @@ public class RecommendationController {
             @RequestParam Long movieId) {
 
         String username = userDetails.getUsername();
-        log.info("Пользователь {} отправляет рекомендацию фильма {} пользователю {}",
-                username, movieId, receiverId);
-
-            recommendationService.sendRecommendation(username, receiverId, movieId);
-            log.info("Рекомендация успешно отправлена");
-            return ResponseEntity.ok().build();
+        log.info("POST /api/recommendations - User {} sends recommendation request of movie {} to user {}", username, movieId, receiverId);
+        recommendationService.sendRecommendation(username, receiverId, movieId);
+        log.info("POST /api/recommendations - Recommendation sent successfully by user {}", username);
+        return ResponseEntity.ok().build();
     }
 
     /**
@@ -48,12 +46,10 @@ public class RecommendationController {
             @RequestParam Long movieId) {
 
         String username = userDetails.getUsername();
-        log.info("Пользователь {} отменяет рекомендацию фильма {} пользователю {}",
-                username, movieId, receiverId);
-
-            recommendationService.cancelRecommendation(username, receiverId, movieId);
-            log.info("Рекомендация успешно отменена");
-            return ResponseEntity.ok().build();
+        log.info("DELETE /api/recommendations - User {} cancels recommendation request of movie {} to user {}", username, movieId, receiverId);
+        recommendationService.cancelRecommendation(username, receiverId, movieId);
+        log.info("DELETE /api/recommendations - Recommendation cancelled successfully by user {}", username);
+        return ResponseEntity.ok().build();
     }
 
     /**
@@ -62,14 +58,10 @@ public class RecommendationController {
     @GetMapping("/sent")
     public ResponseEntity<List<RecommendationDto>> getSentRecommendations(
             @AuthenticationPrincipal UserDetails userDetails) {
-
         String username = userDetails.getUsername();
-        log.info("Запрос отправленных рекомендаций пользователя {}", username);
-
-        List<RecommendationDto> recommendations =
-                recommendationService.findAllBySender(username);
-
-        log.info("Найдено {} отправленных рекомендаций", recommendations.size());
+        log.info("GET /api/recommendations/sent - Fetching sent recommendations of user {}", username);
+        List<RecommendationDto> recommendations = recommendationService.findAllBySender(username);
+        log.info("GET /api/recommendations/sent - Found {} sent recommendations for user {}", recommendations.size(), username);
         return ResponseEntity.ok(recommendations);
     }
 
@@ -79,14 +71,10 @@ public class RecommendationController {
     @GetMapping("/received")
     public ResponseEntity<List<RecommendationDto>> getReceivedRecommendations(
             @AuthenticationPrincipal UserDetails userDetails) {
-
         String username = userDetails.getUsername();
-        log.info("Запрос полученных рекомендаций пользователя {}", username);
-
-        List<RecommendationDto> recommendations =
-                recommendationService.findAllByReceiver(username);
-
-        log.info("Найдено {} полученных рекомендаций", recommendations.size());
+        log.info("GET /api/recommendations/received - Fetching received recommendations of user {}", username);
+        List<RecommendationDto> recommendations = recommendationService.findAllByReceiver(username);
+        log.info("GET /api/recommendations/received - Found {} received recommendations for user {}", recommendations.size(), username);
         return ResponseEntity.ok(recommendations);
     }
 }

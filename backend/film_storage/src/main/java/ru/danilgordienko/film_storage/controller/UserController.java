@@ -27,36 +27,31 @@ public class UserController {
     // получение инфо пользователя по id
     @GetMapping("/{id}/info")
     public ResponseEntity<UserInfoDto> getUserInfo(@PathVariable Long id) {
-        log.info("Запрос данных о пользователе с id: {}", id);
-
+        log.info("GET /api/users/{id}/info - Request for user info with id={}", id);
         UserInfoDto userInfoDto = userService.getUserInfo(id);
-        log.info("Пользователь {} найден", userInfoDto.getUsername());
-
+        log.info("GET /api/users/{id}/info - User '{}' found", userInfoDto.getUsername());
         return ResponseEntity.ok(userInfoDto);
     }
 
     // получение инфо пользователя текущего пользователя
     @GetMapping("/me/info")
     public ResponseEntity<UserInfoDto> getCurrentUserInfo(@AuthenticationPrincipal UserDetails userDetails) {
-        log.info("Запрос данных о текущем пользователе: {}", userDetails.getUsername());
-
+        log.info("GET /api/users/me/info - Request for current user info: {}", userDetails.getUsername());
         UserInfoDto userInfoDto = userService.getUserInfoByUsername(userDetails.getUsername());
+        log.info("GET /api/users/me/info - Successfully receive current user info: {}", userDetails.getUsername());
         return ResponseEntity.ok(userInfoDto);
     }
 
     // поиск пользователя по запросу query
     @GetMapping("/search")
     public ResponseEntity<List<UserListDto>> searchUsers(@RequestParam("query") String query) {
-        log.info("GET /api/users/search - поиск пользователей по запросу: {}", query);
-
+        log.info("GET /api/users/search - Search users request by query: '{}'", query);
         List<UserListDto> users = userService.searchUserByUsername(query);
-
         if (users.isEmpty()) {
-            log.warn("По запросу '{}' пользователи не найдены", query);
+            log.warn("GET /api/users/search - No users found for query '{}'", query);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
-
-        log.info("По запросу '{}' найдено {} пользователей", query, users.size());
+        log.info("GET /api/users/search - Found {} users for query '{}'", users.size(), query);
         return ResponseEntity.ok(users);
     }
 
@@ -65,30 +60,27 @@ public class UserController {
             @ModelAttribute @Valid UserProfileUpdateDto dto,
             @RequestParam(value = "avatar", required = false) MultipartFile file,
             @AuthenticationPrincipal UserDetails userDetails) {
-        log.info("POST /api/users/me/profile/update - запрос на обновление профиля пользователя: {}",
-            userDetails.getUsername());
-
-        userService.updateUserProfile(dto, file,  userDetails.getUsername());
-        log.info("профиль пользователя: {} успешно изменен", userDetails.getUsername());
+        log.info("POST /api/users/me/profile/update - Request to update profile for user {}", userDetails.getUsername());
+        userService.updateUserProfile(dto, file, userDetails.getUsername());
+        log.info("POST /api/users/me/profile/update - Profile updated successfully for user {}", userDetails.getUsername());
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("me/password")
     public ResponseEntity<String> changePassword(@RequestBody @Valid UserChangePasswordDto dto,
                                                @AuthenticationPrincipal UserDetails userDetails) {
-        log.info("POST /api/users/me/password - запрос на смену пароля пользователя: {}",
-                userDetails.getUsername());
+        log.info("POST /api/users/me/password - Request to change password for user {}", userDetails.getUsername());
         userService.updateUserPassword(dto, userDetails.getUsername());
-        log.info("пароль пользователя: {} успешно изменен", userDetails.getUsername());
+        log.info("POST /api/users/me/password - Password changed successfully for user {}", userDetails.getUsername());
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> deleteUser(@RequestParam Long id) {
-        log.info("POST /api/users/id - запрос на удаление пользователя с id: {}", id);
+        log.info("POST /api/users/{id} - Request to delete user with id={}", id);
         userService.deleteUser(id);
-        log.info("Пользователь с id: {} успешно удален", id);
+        log.info("POST /api/users/{id} - User with id={} deleted successfully", id);
         return ResponseEntity.ok().build();
     }
 

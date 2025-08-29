@@ -27,146 +27,151 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FriendshipServiceImpl implements FriendshipService {
 
-    private final UserMapping  userMapping;
+    private final UserMapping userMapping;
     private final FriendRequestRepository friendRequestRepository;
     private final UserService userService;
 
-
-    //получение друзей текущего пользователя
+    // Get friends of the current user
     public UserFriendsDto getCurrentUserFriends(String username) {
         User user = userService.getUserByEmail(username);
+        log.debug("Retrieving friends for current user '{}'", username);
         return userMapping.toUserFriendsDto(user);
     }
 
-    //получение друзей пользователя по id
-    public UserFriendsDto getUserFriends(Long id){
-            User user = userService.getUserById(id);
-            return userMapping.toUserFriendsDto(user);
+    // Get friends of a user by id
+    public UserFriendsDto getUserFriends(Long id) {
+        User user = userService.getUserById(id);
+        log.debug("Retrieving friends for user with ID '{}'", id);
+        return userMapping.toUserFriendsDto(user);
     }
 
-    //отправка заявки в друзья от текущего пользователя к пользователю с targetId
+    // Send friend request from current user to targetId
     @Transactional
     public void sendFriendRequest(String username, Long targetId) {
         try {
             var sender = userService.getUserByEmail(username);
-            var reciever = userService.getUserById(targetId);
+            var receiver = userService.getUserById(targetId);
 
-            if (sender.equals(reciever)) {
-                log.warn("Отправитель и получатель совпадают: '{}' ", username);
-                throw new IllegalStateException("Отправитель и получатель совпадают: " + "username");
+            if (sender.equals(receiver)) {
+                log.warn("Sender and receiver are the same: '{}'", username);
+                throw new IllegalStateException("Sender and receiver are the same: " + username);
             }
 
-            if (sender.getFriends().contains(reciever)) {
-                log.warn("Отправитель {} и получатель {} уже друзья", username, reciever.getUsername());
-                throw new FriendshipAlreadyExistsException("Пользователь уже у вас в друзьях");
+            if (sender.getFriends().contains(receiver)) {
+                log.warn("Sender '{}' and receiver '{}' are already friends", username, receiver.getUsername());
+                throw new FriendshipAlreadyExistsException("User is already in your friends list");
             }
 
             friendRequestRepository.save(FriendRequest.builder()
                     .sender(sender)
-                    .receiver(reciever)
+                    .receiver(receiver)
                     .build());
-            log.info("Заявка в друзья от пользователя {} пользователю с id: {} успешно отправлена", username, targetId);
+            log.debug("Friend request successfully sent from '{}' to user ID '{}'", username, targetId);
         } catch (DataAccessException e) {
-            log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
-            throw new DatabaseConnectionException("Ошибка подключения к базе данных", e);
+            log.error("Database access error while sending friend request", e);
+            throw new DatabaseConnectionException("Database connection error", e);
         }
-
     }
 
-    //принятие заявки в друзья от пользователю с requesterId
+    // Accept friend request from requesterId
     @Transactional
     public void acceptFriendRequest(String username, Long requesterId) {
         try {
             var sender = userService.getUserByEmail(username);
-            var reciever = userService.getUserById(requesterId);
+            var receiver = userService.getUserById(requesterId);
 
-            var request = friendRequestRepository.findBySenderAndReceiver(sender, reciever);
+            var request = friendRequestRepository.findBySenderAndReceiver(sender, receiver);
 
             if (request.isEmpty()) {
-                log.warn("Попытка принять не существующий запрос от {} к {}",  reciever.getUsername(), username);
-                throw new FriendRequestNotFoundException("Заявки в друзья не существует");
+                log.warn("Attempt to accept non-existing friend request from '{}' to '{}'", receiver.getUsername(), username);
+                throw new FriendRequestNotFoundException("Friend request does not exist");
             }
-            // Удаляем запрос
+
+            // Remove request
             friendRequestRepository.delete(request.get());
 
-            // Cохраняем друга с обеих сторон
-            sender.getFriends().add(reciever);
-            reciever.getFriends().add(sender);
+            // Save friends on both sides
+            sender.getFriends().add(receiver);
+            receiver.getFriends().add(sender);
             userService.saveUser(sender);
-            userService.saveUser(reciever);
+            userService.saveUser(receiver);
+            log.debug("Friend request accepted between '{}' and '{}'", username, receiver.getUsername());
         } catch (DataAccessException e) {
-            log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
-            throw new DatabaseConnectionException("Ошибка подключения к базе данных", e);
+            log.error("Database access error while accepting friend request", e);
+            throw new DatabaseConnectionException("Database connection error", e);
         }
     }
 
-    //отклонение заявки в друзья от пользователю с requesterId
+    // Decline friend request from requesterId
     @Transactional
     public void declineFriendRequest(String username, Long requesterId) {
         try {
             var sender = userService.getUserByEmail(username);
-            var reciever = userService.getUserById(requesterId);
+            var receiver = userService.getUserById(requesterId);
 
-            var request = friendRequestRepository.findBySenderAndReceiver(sender, reciever);
+            var request = friendRequestRepository.findBySenderAndReceiver(sender, receiver);
 
             if (request.isEmpty()) {
-                log.warn("Попытка отклонить не существующий запрос от {} к {}",  reciever.getUsername(), username);
-                throw new FriendRequestNotFoundException("Заявки в друзья не существует");
+                log.warn("Attempt to decline non-existing friend request from '{}' to '{}'", receiver.getUsername(), username);
+                throw new FriendRequestNotFoundException("Friend request does not exist");
             }
-            // Удаляем запрос
+
+            // Remove request
             friendRequestRepository.delete(request.get());
+            log.debug("Friend request declined from '{}' to '{}'", receiver.getUsername(), username);
         } catch (DataAccessException e) {
-            log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
-            throw new DatabaseConnectionException("Ошибка подключения к базе данных", e);
+            log.error("Database access error while declining friend request", e);
+            throw new DatabaseConnectionException("Database connection error", e);
         }
     }
 
-    // удаление пользователя из друзей
+    // Remove friend
     @Transactional
     public void removeFriend(String username, Long friendId) {
         try {
             var sender = userService.getUserByEmail(username);
-            var reciever = userService.getUserById(friendId);
+            var receiver = userService.getUserById(friendId);
 
-            if (!sender.getFriends().contains(reciever)) {
-                log.warn("Пользователь {} пытался удалить не существующего друга {}", username, reciever.getUsername());
-                throw new FriendshipNotFoundException("");
+            if (!sender.getFriends().contains(receiver)) {
+                log.warn("User '{}' attempted to remove non-existing friend '{}'", username, receiver.getUsername());
+                throw new FriendshipNotFoundException("Friendship does not exist");
             }
 
-            // удаляем с обеих сторон
-            sender.getFriends().remove(reciever);
-            reciever.getFriends().remove(sender);
+            // Remove friendship from both sides
+            sender.getFriends().remove(receiver);
+            receiver.getFriends().remove(sender);
             userService.saveUser(sender);
-            userService.saveUser(reciever);
+            userService.saveUser(receiver);
+            log.debug("Friend '{}' removed from user '{}''s friends list", receiver.getUsername(), username);
         } catch (DataAccessException e) {
-            log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
-            throw new DatabaseConnectionException("Ошибка подключения к базе данных", e);
+            log.error("Database access error while removing friend", e);
+            throw new DatabaseConnectionException("Database connection error", e);
         }
     }
 
-    // получение входящих запросов в друзья для текущего пользователя
+    // Get incoming friend requests for current user
     public List<UserListDto> getIncomingRequests(String username) {
         try {
             User user = userService.getUserByEmail(username);
+            log.debug("Retrieving incoming friend requests for user '{}'", username);
             return friendRequestRepository.findByReceiver(user)
                     .stream().map(r -> userMapping.toUserListDto(r.getSender())).toList();
         } catch (DataAccessException e) {
-            log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
-            throw new DatabaseConnectionException("Ошибка подключения к базе данных", e);
+            log.error("Database access error while retrieving incoming requests", e);
+            throw new DatabaseConnectionException("Database connection error", e);
         }
     }
 
-    // получение отправленных запросов от текущего пользователя
+    // Get outgoing friend requests from current user
     public List<UserListDto> getOutgoingRequests(String username) {
         try {
             User user = userService.getUserByEmail(username);
+            log.debug("Retrieving outgoing friend requests for user '{}'", username);
             return friendRequestRepository.findBySender(user)
                     .stream().map(r -> userMapping.toUserListDto(r.getReceiver())).toList();
         } catch (DataAccessException e) {
-            log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
-            throw new DatabaseConnectionException("Ошибка подключения к базе данных", e);
+            log.error("Database access error while retrieving outgoing requests", e);
+            throw new DatabaseConnectionException("Database connection error", e);
         }
     }
-
-
 }

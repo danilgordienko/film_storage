@@ -37,7 +37,6 @@ public class TmdbApiService implements MovieApiService {
     private final WebClient webClient;
     private Map<Long, Genre> genres = new HashMap<>();
 
-
     private String getGenreUrl() {
         return "https://api.themoviedb.org/3/genre/movie/list?api_key=" + API_KEY + "&language=ru-RU";
     }
@@ -62,12 +61,11 @@ public class TmdbApiService implements MovieApiService {
     }
 
     @Scheduled(cron = "0 0 3 * * MON")
-    //@Scheduled(cron = "0 * * * * *")
     public void populateMovies(){
         getRecentlyReleasedMovies(7)
                 .doOnNext(movies -> {
-                        retryableTaskService.createRetryableTask(movies, RetryableTaskType.SEND_MOVIE_REQUEST);
-                        log.debug("Задача на отправку {} фильмов получена", movies.size());
+                    retryableTaskService.createRetryableTask(movies, RetryableTaskType.SEND_MOVIE_REQUEST);
+                    log.debug("Task for sending {} movies received", movies.size());
                 })
                 .subscribe();
     }
@@ -79,15 +77,11 @@ public class TmdbApiService implements MovieApiService {
 
     @Override
     public Mono<List<TmdbMovie>> getPopularMovies() {
-        log.debug("Попытка получить популярные фильмы через TMDB API");
+        log.debug("Attempting to fetch popular movies via TMDB API");
         loadGenres();
         return webClient.get()
                 .uri(getMovieUrl())
                 .retrieve()
-//                .onStatus(HttpStatus::isError, clientResponse -> {
-//                    log.error("TMDb API error: {}", clientResponse.statusCode());
-//                    return Mono.error(new RuntimeException("TMDb API error"));
-//                })
                 .bodyToMono(TmdbResponse.class)
                 .map(r -> {
                     var results = r.getResults();
@@ -98,32 +92,28 @@ public class TmdbApiService implements MovieApiService {
                     return results;
                 })
                 .onErrorResume(e -> {
-                    log.error("Ошибка подключения к TMDb API", e);
+                    log.error("TMDb API connection error", e);
                     return Mono.just(List.of());
                 });
     }
 
     @Override
     public Mono<byte[]> downloadPoster(String posterPath) {
-        log.debug("Попытка получить постер через TMDB API");
+        log.debug("Attempting to fetch poster via TMDB API");
         if (posterPath == null || posterPath.isBlank()) {
             return Mono.just(new byte[0]);
         }
 
         String imageUrl = getImageUrl() + posterPath;
-        log.debug("Попытка получить постер с: {}", imageUrl);
+        log.debug("Attempting to fetch poster from: {}", imageUrl);
         return webClient.get()
                 .uri(imageUrl)
                 .accept(MediaType.IMAGE_JPEG)
                 .retrieve()
-//                .onStatus(HttpStatus::isError, response -> {
-//                    log.error("Failed to fetch poster, status: {}", response.statusCode());
-//                    return Mono.error(new RuntimeException("Failed to fetch poster"));
-//                })
                 .bodyToMono(byte[].class)
-                .doOnNext(bytes -> log.debug("Получен постер, {} байт", bytes.length))
+                .doOnNext(bytes -> log.debug("Poster received, {} bytes", bytes.length))
                 .onErrorResume(e -> {
-                    log.warn("Ошибка при загрузке постера с {}: {}", imageUrl, e.getMessage());
+                    log.warn("Error downloading poster from {}: {}", imageUrl, e.getMessage());
                     return Mono.just(new byte[0]);
                 });
     }
@@ -145,7 +135,6 @@ public class TmdbApiService implements MovieApiService {
                                 .map(genre -> {
                                     Genre g = new Genre();
                                     g.setName(genre.getName());
-                                    //log.info(genre.getTmdbId().toString());
                                     g.setTmdbId(genre.getTmdbId());
                                     genres.put(genre.getTmdbId(), genre);
                                     return g;
@@ -155,7 +144,7 @@ public class TmdbApiService implements MovieApiService {
                     return List.<Genre>of();
                 })
                 .onErrorResume(e -> {
-                    log.error("Ошибка подключения к TMDb API", e);
+                    log.error("TMDb API connection error", e);
                     return Mono.just(List.of());
                 })
                 .subscribe();
@@ -163,7 +152,7 @@ public class TmdbApiService implements MovieApiService {
 
     @Override
     public Mono<List<TmdbMovie>> getRecentlyReleasedMovies(int days) {
-        log.debug("Попытка получить недавно вышедшие фильмы через TMDB API");
+        log.debug("Attempting to fetch recently released movies via TMDB API");
         loadGenres();
 
         LocalDate today = LocalDate.now();
@@ -191,10 +180,8 @@ public class TmdbApiService implements MovieApiService {
                     return results;
                 })
                 .onErrorResume(e -> {
-                    log.error("Ошибка подключения к TMDb API", e);
+                    log.error("TMDb API connection error", e);
                     return Mono.just(List.of());
                 });
     }
-
-
 }

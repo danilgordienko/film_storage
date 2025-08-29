@@ -123,8 +123,8 @@ public class JWTCore {
                             .build()
             );
         } catch (DataAccessException e) {
-            log.error("Ошибка подключения к БД", e);
-            throw new DatabaseConnectionException("Не удалось подключится к БД", e);
+            log.error("Database access error: {}", e.getMessage(), e);
+            throw new DatabaseConnectionException("Failed to connect to the database", e);
         }
     }
 
@@ -139,8 +139,8 @@ public class JWTCore {
                             .build()
             );
         } catch (DataAccessException e) {
-            log.error("Ошибка подключения к БД", e);
-            throw new DatabaseConnectionException("Не удалось подключится к БД", e);
+            log.error("Database access error: {}", e.getMessage(), e);
+            throw new DatabaseConnectionException("Failed to connect to the database", e);
         }
     }
 
@@ -152,8 +152,8 @@ public class JWTCore {
                 refreshTokenRepository.save(rt);
             });
         } catch (DataAccessException e) {
-            log.error("Ошибка подключения к БД", e);
-            throw new DatabaseConnectionException("Не удалось подключится к БД", e);
+            log.error("Database access error: {}", e.getMessage(), e);
+            throw new DatabaseConnectionException("Failed to connect to the database", e);
         }
     }
 
@@ -175,8 +175,8 @@ public class JWTCore {
         try {
             refreshTokenRepository.deleteAllByUser(user);
         } catch (DataAccessException e) {
-            log.error("Ошибка подключения к БД", e);
-            throw new DatabaseConnectionException("Не удалось подключится к БД", e);
+            log.error("Database access error: {}", e.getMessage(), e);
+            throw new DatabaseConnectionException("Failed to connect to the database", e);
         }
     }
 
@@ -184,8 +184,8 @@ public class JWTCore {
         try {
             accessTokenRepository.deleteAllByUser(user);
         } catch (DataAccessException e) {
-            log.error("Ошибка подключения к БД", e);
-            throw new DatabaseConnectionException("Не удалось подключится к БД", e);
+            log.error("Database access error: {}", e.getMessage(), e);
+            throw new DatabaseConnectionException("Failed to connect to the database", e);
         }
     }
 

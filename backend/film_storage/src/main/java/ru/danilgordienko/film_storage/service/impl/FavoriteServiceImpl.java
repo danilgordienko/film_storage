@@ -28,56 +28,57 @@ public class FavoriteServiceImpl implements FavoriteService {
     private final UserService userService;
     private final MovieService movieService;
 
-    //добавление фильма в избранное
+    // Adding a movie to favorites
     public void addFavorite(Long id, String username) {
         try {
-            log.info("Добавление фильма в избранное. Пользователь: {}, Фильм ID: {}", username, id);
+            log.debug("Adding movie to favorites. User: {}, Movie ID: {}", username, id);
 
             var user = userService.getUserByEmail(username);
             var movie = movieService.getMovieById(id);
 
             if (favoriteRepository.existsByUserAndMovie(user, movie)) {
-                log.warn("Фильм '{}' уже в избранное пользователем '{}': фильм уже в избранном",
-                        movie.getTitle(), user.getUsername());
-                throw new FavoriteAlreadyExistsException("Фильм уже в избранном");
+                log.warn("Movie '{}' already in favorites for user '{}'", movie.getTitle(), user.getUsername());
+                throw new FavoriteAlreadyExistsException("Movie already in favorites");
             }
 
-            Favorite favorite = Favorite
-                    .builder()
+            Favorite favorite = Favorite.builder()
                     .movie(movie)
                     .user(user)
                     .build();
 
             favoriteRepository.save(favorite);
+            log.debug("Movie '{}' successfully added to favorites for user '{}'", movie.getTitle(), user.getUsername());
         } catch (DataAccessException e) {
-            log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
-            throw new DatabaseConnectionException("Ошибка подключения к базе данных", e);
+            log.error("Database access error while adding favorite", e);
+            throw new DatabaseConnectionException("Database connection error", e);
         }
     }
 
     @Transactional
     public void removeFavorite(Long id, String username) {
         try {
-            log.info("Удаление фильма из избранного. Пользователь: {}, Фильм ID: {}", username, id);
+            log.debug("Removing movie from favorites. User: {}, Movie ID: {}", username, id);
 
             var user = userService.getUserByEmail(username);
             var movie = movieService.getMovieById(id);
 
             if (!favoriteRepository.existsByUserAndMovie(user, movie)) {
-                log.warn("Попытка удалить фильм '{}' из избранного пользователем '{}': фильм не находится в избранном",
+                log.warn("Attempt to remove movie '{}' from favorites by user '{}': movie not found in favorites",
                         movie.getTitle(), user.getUsername());
-                throw new FavoriteNotFoundException("Фильм не находится в избранном");
+                throw new FavoriteNotFoundException("Movie not found in favorites");
             }
 
             favoriteRepository.deleteByUserAndMovie(user, movie);
+            log.debug("Movie '{}' successfully removed from favorites for user '{}'", movie.getTitle(), user.getUsername());
         } catch (DataAccessException e) {
-            log.error("Ошибка доступа к базе данных: {}", e.getMessage(), e);
-            throw new DatabaseConnectionException("Ошибка подключения к базе данных", e);
+            log.error("Database access error while removing favorite", e);
+            throw new DatabaseConnectionException("Database connection error", e);
         }
     }
 
     public UserFavoritesDto getUserFavoritesByUsername(String username) {
-        User user =  userService.getUserByEmail(username);
+        User user = userService.getUserByEmail(username);
+        log.debug("Retrieving favorites for user '{}'", username);
         return userMapping.toUserFavoritesDto(user);
     }
 }

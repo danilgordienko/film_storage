@@ -56,7 +56,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
                     jwtCore.validateRefreshToken(token);
                 // Извлекаем имя пользователя из токена
                 String email = jwtCore.getEmailFromToken(token);
-                log.debug("Получен токен для пользователя: {}", email);
+                log.debug("Received token for user: {}", email);
 
                 // Загружаем данные пользователя по имени
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
@@ -65,24 +65,24 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-                log.debug("Аутентификация пользователя '{}' успешно установлена", email);
+                log.debug("User '{}' successfully authenticated in context", email);
             }
 
             // Передаем управление следующему фильтру в цепочке
             filterChain.doFilter(request, response);
 
         } catch (TokenExpiredException e) {
-            log.warn("JWT-токен просрочен: {}", e.getMessage());
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "JWT-токен просрочен");
+            log.warn(e.getMessage());
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "JWT-token is expired");
         } catch (UnsupportedJwtException | MalformedJwtException | TokenAlreadyRevokedException | TokenNotFoundException e) {
-            log.warn("Недействительный JWT-токен: {}", e.getMessage());
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Недействительный JWT-токен");
+            log.warn("Invalid JWT-token: {} ", e.getMessage());
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Invalid JWT-token");
         } catch (JwtException e) {
-            log.warn("Неверный JWT-токен: {}", e.getMessage());
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Неверный JWT-токен");
+            log.warn("Invalid JWT-token: {}", e.getMessage());
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT-token");
         } catch (Exception e) {
-            log.error("Ошибка аутентификации: {}", e.getMessage(), e);
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Ошибка аутентификации");
+            log.error("Authentication error: {}", e.getMessage(), e);
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Authentication error");
         }
     }
 

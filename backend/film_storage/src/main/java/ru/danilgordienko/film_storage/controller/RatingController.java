@@ -27,34 +27,33 @@ public class RatingController {
 
     /**
      * добавление рейтинга к фильму рейтинга
-     * @param rating - рейтинг от 1 до 10
-     * @param bindingResult - собирает все ошибки валидации
      */
     @PostMapping("/add/movies/{id}")
     public ResponseEntity<String> addRating(@PathVariable Long id,
                                             @AuthenticationPrincipal UserDetails userDetails,
-                                            @RequestBody @Valid RatingDto rating,
-                                            BindingResult bindingResult) {
-        log.info("Запрос на добавление рейтинга фильму: id={}, rating={}", id, rating);
+                                            @RequestBody @Valid RatingDto rating) {
+        log.info("POST /api/ratings/add/movies/{} - Adding rating {} by user {}", id, rating, userDetails.getUsername());
         ratingService.addRating(id, rating, userDetails.getUsername());
-        log.info("Рейтинг успешно добавлен фильму: id={}", id);
-        return ResponseEntity.ok("Рейтинг добавлен");
+        log.info("POST /api/ratings/add/movies/{} - Rating added successfully by user {}", id, userDetails.getUsername());
+        return ResponseEntity.ok("Rating added");
     }
 
     // получение оценок текущего пользователя
     @GetMapping("users/me")
     public ResponseEntity<UserRatingDto> getCurrentUserRatings(@AuthenticationPrincipal UserDetails userDetails) {
-        log.info("Запрос оценок текущего пользователя: {}", userDetails.getUsername());
-        return ResponseEntity.ok(ratingService.getUserRatingsByUsername(userDetails.getUsername()));
+        log.info("GET /api/ratings/users/me - Fetching ratings for current user {}", userDetails.getUsername());
+        var response = ratingService.getUserRatingsByUsername(userDetails.getUsername());
+        log.info("GET /api/ratings/users/me - Successfully fetched ratings for current user {}", userDetails.getUsername());
+
+        return ResponseEntity.ok(response);
     }
 
     // получение оценок полльзоваля по id
     @GetMapping("users/{id}")
     public ResponseEntity<UserRatingDto> getUserRatings(@PathVariable Long id){
-        log.info("Запрос оценок пользователя с id: {}", id);
-
+        log.info("GET /api/ratings/users/{} - Fetching user ratings", id);
         UserRatingDto user = ratingService.getUserRatings(id);
-        log.info("Пользователь найден, всего оценок: {}", user.getRatings().size());
+        log.info("GET /api/ratings/users/{} - Successfully fetched ratings, count {}", id, user.getRatings().size());
         return ResponseEntity.ok(user);
     }
 }

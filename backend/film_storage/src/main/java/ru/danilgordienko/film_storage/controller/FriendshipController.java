@@ -26,20 +26,18 @@ public class FriendshipController {
     // получение друзей пользователя по id
     @GetMapping("/users/{id}")
     public ResponseEntity<UserFriendsDto> getUserFriends(@PathVariable Long id) {
-        log.info("Запрос друзей пользователя с id: {}", id);
-
+        log.info("[GET /api/friends/users/{}] Request to get friends of user with id={}", id, id);
         UserFriendsDto friendsDto = userService.getUserFriends(id);
-        log.info("Пользователь найден, всего друзей: {}", friendsDto.getFriends().size());
-
+        log.info("[GET /api/friends/users/{}] User found, total friends={}", id, friendsDto.getFriends().size());
         return ResponseEntity.ok(friendsDto);
     }
 
     // получение друзей текущего пользователя
     @GetMapping
     public ResponseEntity<UserFriendsDto> getCurrentUserFriends(@AuthenticationPrincipal UserDetails userDetails) {
-        log.info("Запрос друзей текущего пользователя: {}", userDetails.getUsername());
+        log.info("[GET /api/friends] Request to get current user's friends: {}", userDetails.getUsername());
         UserFriendsDto friends = friendshipService.getCurrentUserFriends(userDetails.getUsername());
-        log.info("Друзья пользователя {} получены", userDetails.getUsername());
+        log.info("[GET /api/friends] Friends successfully retrieved for user={}", userDetails.getUsername());
         return ResponseEntity.ok(friends);
     }
 
@@ -47,9 +45,9 @@ public class FriendshipController {
     @PostMapping("/request/{targetId}")
     public ResponseEntity<Void> sendFriendRequest(@AuthenticationPrincipal UserDetails userDetails,
                                                   @PathVariable Long targetId) {
-        log.info("Запрос от пользователя {} на отправку заявки в друзья пользователю с id: {}", userDetails.getUsername(), targetId);
+        log.info("[POST /api/friends/request/{}] User {} sends friend request to user with id={}", targetId, userDetails.getUsername(), targetId);
         friendshipService.sendFriendRequest(userDetails.getUsername(), targetId);
-        log.info("Пользователь {} успешно отправил заявку пользователю с id: {}", userDetails.getUsername(), targetId);
+        log.info("[POST /api/friends/request/{}] User {} successfully sent friend request", targetId, userDetails.getUsername());
         return ResponseEntity.ok().build();
     }
 
@@ -57,9 +55,9 @@ public class FriendshipController {
     @PostMapping("/accept/{requesterId}")
     public ResponseEntity<Void> acceptFriendRequest(@AuthenticationPrincipal UserDetails userDetails,
                                                     @PathVariable Long requesterId) {
-        log.info("Запрос пользователя {} на принятие заявки от пользователя с id: {}", userDetails.getUsername(), requesterId);
+        log.info("[POST /api/friends/accept/{}] User {} accepts friend request from user with id={}", requesterId, userDetails.getUsername(), requesterId);
         friendshipService.acceptFriendRequest(userDetails.getUsername(), requesterId);
-        log.info("Пользователь {} успешно принял заявку от пользователя с id: {}", userDetails.getUsername(), requesterId);
+        log.info("[POST /api/friends/accept/{}] User {} successfully accepted friend request", requesterId, userDetails.getUsername());
         return ResponseEntity.ok().build();
     }
 
@@ -67,9 +65,9 @@ public class FriendshipController {
     @PostMapping("/decline/{requesterId}")
     public ResponseEntity<Void> declineFriendRequest(@AuthenticationPrincipal UserDetails userDetails,
                                                      @PathVariable Long requesterId) {
-        log.info("Запрос пользователя {} на отклонение заявки от пользователя с id: {}", userDetails.getUsername(), requesterId);
+        log.info("[POST /api/friends/decline/{}] User {} declines friend request from user with id={}", requesterId, userDetails.getUsername(), requesterId);
         friendshipService.declineFriendRequest(userDetails.getUsername(), requesterId);
-        log.info("Пользователь {} успешно отклонил заявку от пользователя с id: {}", userDetails.getUsername(), requesterId);
+        log.info("[POST /api/friends/decline/{}] User {} successfully declined friend request", requesterId, userDetails.getUsername());
         return ResponseEntity.ok().build();
     }
 
@@ -77,27 +75,27 @@ public class FriendshipController {
     @DeleteMapping("/remove/{friendId}")
     public ResponseEntity<Void> removeFriend(@AuthenticationPrincipal UserDetails userDetails,
                                              @PathVariable Long friendId) {
-        log.info("Запрос пользователя {} на удаление из друзей пользователя с id: {}", userDetails.getUsername(), friendId);
+        log.info("[DELETE /api/friends/remove/{}] User {} removes friend with id={}", friendId, userDetails.getUsername(), friendId);
         friendshipService.removeFriend(userDetails.getUsername(), friendId);
-        log.info("Пользователь {} успешно удалил из друзей пользователя с id: {}", userDetails.getUsername(), friendId);
+        log.info("[DELETE /api/friends/remove/{}] User {} successfully removed friend", friendId, userDetails.getUsername());
         return ResponseEntity.ok().build();
     }
 
     // Посмотреть входящие заявки
     @GetMapping("/requests/incoming")
     public ResponseEntity<List<UserListDto>> getIncomingRequests(@AuthenticationPrincipal UserDetails userDetails) {
-        log.info("Пользователь {} запрашивает входящие заявки", userDetails.getUsername());
+        log.info("[GET /api/friends/requests/incoming] User {} requests incoming friend requests", userDetails.getUsername());
         List<UserListDto> requests = friendshipService.getIncomingRequests(userDetails.getUsername());
-        log.info("Входящие заявки для пользователя {} получены, всего:  {}", userDetails.getUsername(), requests.size());
+        log.info("[GET /api/friends/requests/incoming] Incoming requests retrieved for user={}, total={}", userDetails.getUsername(), requests.size());
         return ResponseEntity.ok(requests);
     }
 
     // Посмотреть исходящие заявки
     @GetMapping("/requests/outgoing")
     public ResponseEntity<List<UserListDto>> getOutgoingRequests(@AuthenticationPrincipal UserDetails userDetails) {
-        log.info("Пользователь {} запрашивает исходящие заявки", userDetails.getUsername());
+        log.info("[GET /api/friends/requests/outgoing] User {} requests outgoing friend requests", userDetails.getUsername());
         List<UserListDto> requests = friendshipService.getOutgoingRequests(userDetails.getUsername());
-        log.info("Исходящие заявки для пользователя {} получены, всего:  {}", userDetails.getUsername(), requests.size());
+        log.info("[GET /api/friends/requests/outgoing] Outgoing requests retrieved for user={}, total={}", userDetails.getUsername(), requests.size());
         return ResponseEntity.ok(requests);
     }
 

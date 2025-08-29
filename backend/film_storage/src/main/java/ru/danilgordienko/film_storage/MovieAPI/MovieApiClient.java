@@ -30,7 +30,7 @@ public class MovieApiClient {
     private final int size = 20;
 
     private Optional<Object> getRabbitResponse(String exchange, String routingKey, Object body) {
-        log.info("Запрос к RabbitMQ с телом: {}", body.toString());
+        log.debug("Request to RabbitMQ with body: {}", body.toString());
         try {
             return Optional.ofNullable(rabbitTemplate.convertSendAndReceive(
                     exchange,
@@ -38,29 +38,29 @@ public class MovieApiClient {
                     body
             ));
         } catch (AmqpException e) {
-            log.error("Ошибка при работе с RabbitMQ: {}", e.getMessage(), e);
+            log.error("Error while working with RabbitMQ: {}", e.getMessage(), e);
             return Optional.empty();
         } catch (Exception e) {
-            log.error("Непредвиденная ошибка: {}", e.getMessage(), e);
+            log.error("Unexpected error: {}", e.getMessage(), e);
             return Optional.empty();
         }
     }
 
     public byte[] getPoster(Movie movie) {
-        log.info("Получение постера к фильму с id: {}", movie.getId());
+        log.debug("Getting poster for movie with id: {}", movie.getId());
         var response = getRabbitResponse(
                 RabbitConfig.EXCHANGE,
                 RabbitConfig.ROUTING_KEY_POSTER,
                 movie.getPoster()
         );
         return response.map(r -> {
-            log.info("Постер к фильму с id: {} получен", movie.getId());
+            log.debug("Poster for movie with id: {} received", movie.getId());
             return (byte[]) r;
         }).orElse(new byte[0]);
     }
 
     public List<MovieDto> getPopularMoviesPage(int page){
-        log.info("Получение страницы {} фильмов", page);
+        log.debug("Getting popular movies page {}", page);
         var response = getRabbitResponse(
                 RabbitConfig.EXCHANGE,
                 RabbitConfig.ROUTING_KEY_PAGE,
@@ -68,7 +68,7 @@ public class MovieApiClient {
         );
 
         if (response.isEmpty()) {
-            log.warn("Ответ от сервиса фильмов не получен");
+            log.warn("No response received from movie service");
             return List.of();
         }
 
@@ -76,7 +76,7 @@ public class MovieApiClient {
         try {
             movies = (List<MovieDto>) response.get();
         } catch (ClassCastException e) {
-            log.error("Ошибка приведения типов: {}", e.getMessage());
+            log.error("Type casting error: {}", e.getMessage());
             return List.of();
         }
         return movies;
@@ -84,7 +84,7 @@ public class MovieApiClient {
 
     @RabbitListener(queues = "movies.queue")
     public void getRecentMovies(List<MovieDto> movies) {
-        log.info("Получение недавно вышедших фильмов");
+        log.info("Getting recently released movies");
         eventPublisher.publishEvent(new MoviesReceivedEvent(this, movies));
     }
 

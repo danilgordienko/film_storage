@@ -22,7 +22,7 @@ public class RabbitBrokerClient implements BrokerClient {
 
     @Override
     public boolean sendMovies(List<TmdbMovieResponse> movies) {
-        log.debug("Отправка фильмов");
+        log.debug("Sending movies to rabbit");
         try {
             rabbitTemplate.convertAndSend(
                     RabbitConfig.EXCHANGE,
@@ -31,7 +31,7 @@ public class RabbitBrokerClient implements BrokerClient {
             );
             return true;
         } catch (AmqpException e) {
-            log.error("Ошибка при отвправке фильмов в RabbitMQ", e);
+            log.error("Error while sending movies to rabbit", e);
             return false;
         }
 

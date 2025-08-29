@@ -48,7 +48,6 @@ public class AuthServiceImpl implements AuthService {
     @PostConstruct
     public void initAdmin() {
         String defaultAdminLogin = "admin";
-
         boolean adminExists = userRepository.existsByUsername(defaultAdminLogin);
         if (!adminExists) {
             User admin = User.builder()
@@ -58,7 +57,6 @@ public class AuthServiceImpl implements AuthService {
                     .roles(Set.of(Role.ADMIN.name()))
                     .build();
             userRepository.save(admin);
-            System.out.println("Default admin user created: " + defaultAdminLogin);
         }
     }
 
@@ -107,14 +105,14 @@ public class AuthServiceImpl implements AuthService {
             jwtService.saveAccessToken(accessToken, user);
             return new AuthResponse(accessToken, refreshToken);
         } catch (DataAccessException e) {
-            log.error("Ошибка сохранения в БД", e);
-            throw new DatabaseConnectionException("Не удалось сохранить пользователя в БД", e);
+            log.error("Database save error", e);
+            throw new DatabaseConnectionException("Failed to save user in database", e);
         } catch (ElasticsearchException | RestClientException e) {
-            log.error("Ошибка при сохранении в Elasticsearch", e);
-            throw new ElasticsearchConnectionException("Не удалось сохранить пользователя в Elasticsearch", e);
+            log.error("Elasticsearch save error", e);
+            throw new ElasticsearchConnectionException("Failed to save user in Elasticsearch", e);
         } catch (Exception e) {
-            log.error("Ошибка регистрации пользователя", e);
-            throw new UserRegistrationException("Непредвиденная ошибка при регистрации", e);
+            log.error("User registration error", e);
+            throw new UserRegistrationException("Unexpected error during user registration", e);
         }
     }
 
@@ -163,9 +161,9 @@ public class AuthServiceImpl implements AuthService {
                                 username +
                                 "not found");
                     });
-        } catch (DataAccessException e) {
-            log.error("Ошибка подключения к БД", e);
-            throw new DatabaseConnectionException("Не удалось подключится к БД", e);
+        }   catch (DataAccessException e) {
+            log.error("Database connection error", e);
+            throw new DatabaseConnectionException("Failed to connect to database", e);
         }
     }
 
@@ -178,9 +176,9 @@ public class AuthServiceImpl implements AuthService {
             }
             user.getRoles().add(Role.ADMIN.name());
             userRepository.save(user);
-        } catch (DataAccessException e) {
-            log.error("Ошибка сохранения в БД", e);
-            throw new DatabaseConnectionException("Не удалось сохранить пользователя в БД", e);
+        }  catch (DataAccessException e) {
+            log.debug("Database connection error", e);
+            throw new DatabaseConnectionException("Failed to connect to database", e);
         }
     }
 

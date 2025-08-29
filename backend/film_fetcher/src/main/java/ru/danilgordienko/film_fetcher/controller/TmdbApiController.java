@@ -26,37 +26,32 @@ public class TmdbApiController {
 
     @GetMapping("/movies/popular")
     public Mono<List<TmdbMovie>> getPopularMovies() {
-        log.info("GET /movies/popular, получен запрос на поллучение популярных фильмов");
+        log.info("GET /movies/popular, request received to fetch popular movies");
         var response = tmdbApiService.getPopularMovies();
-        log.info("Популярные фильмы успешно получены");
+        log.info("Popular movies fetched successfully");
         return response;
     }
 
-//    @PostMapping("/movies/send/popular")
-//    public void populateMovies() {
-//        tmdbApiService.populateMovies();
-//    }
-
     @GetMapping("/movies/recent")
     public Mono<List<TmdbMovie>> getRecentMovies() {
-        log.info("GET /movies/recent, получен запрос на поллучение недавно вышедших фильмов");
+        log.info("GET /movies/recent, request received to fetch recently released movies");
         var response = tmdbApiService.getRecentlyReleasedMovies(7);
-        log.info("Недавно вышедшие фильмы успешно получены");
+        log.info("Recently released movies fetched successfully");
         return response;
     }
 
     @GetMapping(value = "/posters/{posterPath}", produces = MediaType.IMAGE_JPEG_VALUE)
     public Mono<ResponseEntity<byte[]>> downloadPoster(@PathVariable String posterPath) {
-        log.info("GET /poster/{}, получен запрос на получение постера", posterPath);
+        log.info("GET /posters/{}, request received to fetch poster", posterPath);
         return tmdbApiService.downloadPoster(posterPath)
                 .map(bytes -> {
                     if (bytes.length > 0) {
-                        log.info("Постер {} успешно получен", posterPath);
+                        log.info("Poster {} fetched successfully", posterPath);
                         return ResponseEntity.ok()
                                 .contentType(MediaType.IMAGE_JPEG)
                                 .body(bytes);
                     }
-                    log.warn("Постер {} не найден",  posterPath);
+                    log.warn("Poster {} not found", posterPath);
                     return ResponseEntity.notFound().build();
                 });
     }
