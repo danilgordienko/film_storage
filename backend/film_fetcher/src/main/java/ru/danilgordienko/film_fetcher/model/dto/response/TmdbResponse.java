@@ -2,7 +2,6 @@ package ru.danilgordienko.film_fetcher.model.dto.response;
 
 import lombok.Getter;
 import lombok.Setter;
-import ru.danilgordienko.film_fetcher.model.dto.request.TmdbMovie;
 
 import java.util.List;
 
@@ -11,5 +10,5 @@ import java.util.List;
 @Setter
 @Getter
 public class TmdbResponse {
-    private List<TmdbMovie> results;
+    private List<MovieDto> results;
 }

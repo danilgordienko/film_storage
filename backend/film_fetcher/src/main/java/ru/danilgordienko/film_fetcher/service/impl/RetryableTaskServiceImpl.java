@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import ru.danilgordienko.film_fetcher.model.dto.request.TmdbMovie;
+import ru.danilgordienko.film_fetcher.model.dto.response.MovieDto;
 import ru.danilgordienko.film_fetcher.model.entity.RetryableTask;
 import ru.danilgordienko.film_fetcher.model.enums.RetryableTaskStatus;
 import ru.danilgordienko.film_fetcher.model.enums.RetryableTaskType;
@@ -33,7 +33,7 @@ public class RetryableTaskServiceImpl implements RetryableTaskService {
 
     @Override
     @Transactional
-    public RetryableTask createRetryableTask(List<TmdbMovie> movies, RetryableTaskType type) {
+    public RetryableTask createRetryableTask(List<MovieDto> movies, RetryableTaskType type) {
         RetryableTask retryableTask = retryableTaskMapping.toSendMovieRetryableTask(movies, type);
         retryableTask.setStatus(RetryableTaskStatus.IN_PROGRESS);
         retryableTask.setRetryTime(Instant.now());

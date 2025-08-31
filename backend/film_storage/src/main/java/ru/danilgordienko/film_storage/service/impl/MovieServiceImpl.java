@@ -60,7 +60,7 @@ public class MovieServiceImpl implements MovieService {
 
     // Получение страницы фильмов
     @Cacheable(value = "movies", key = "#page", condition = "#page == 0")
-    public PageDto getMoviesPage(int page){
+    public PageDto<MovieListCacheDto> getMoviesPage(int page){
         try {
             if (page < 0) {
                 log.warn("Attempted to get page < 0: {}", page);
@@ -68,15 +68,8 @@ public class MovieServiceImpl implements MovieService {
             log.debug("Getting all movies from database");
             Pageable pageable = PageRequest.of(page, size, Sort.by("title").ascending());
             Page<Movie> moviePage = movieRepository.findAll(pageable);
-
-            List<MovieListCacheDto> dtoList = moviePage.getContent()
-                    .stream()
-                    .map(movieMapping::toMovieListCacheDto)
-                    .toList();
-
-            Page<MovieListCacheDto> dtoPage = new PageImpl<>(dtoList, pageable, moviePage.getTotalElements());
-            log.debug("Found {} movies", dtoList.size());
-            return movieMapping.toPageDto(dtoPage);
+            log.debug("Found {} movies", moviePage.getContent().size());
+            return movieMapping.toMovieListCachePageDto(moviePage);
         } catch (DataAccessException e) {
             log.error("Database access error: {}", e.getMessage(), e);
             throw new DatabaseConnectionException("Database connection error", e);
@@ -142,20 +135,13 @@ public class MovieServiceImpl implements MovieService {
         }
     }
 
-    public PageDto searchMoviesPageByTitle(String query, int page) {
+    public PageDto<MovieListDto> searchMoviesPageByTitle(String query, int page) {
         try {
             log.debug("Searching movies in Elasticsearch by title: {}", query);
             Pageable pageable = PageRequest.of(page, size);
             var searchResults = movieSearchRepository.findByTitleContaining(query, pageable);
-
-            List<MovieListDto> dtoList = searchResults.getContent()
-                    .stream()
-                    .map(movieMapping::toMovieListDto)
-                    .toList();
-
-            Page<MovieListDto> dtoPage = new PageImpl<>(dtoList, pageable, searchResults.getTotalElements());
-            log.debug("Found {} movies", dtoList.size());
-            return movieMapping.toMovieListPageDto(dtoPage);
+            log.debug("Found {} movies", searchResults.getContent().size());
+            return movieMapping.toMovieListPageDto(searchResults);
         } catch (ElasticsearchException | RestClientException e) {
             log.error("Error interacting with Elasticsearch", e);
             throw new ElasticsearchConnectionException("Failed to search movies in Elasticsearch", e);
@@ -182,13 +168,14 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Transactional
-    public boolean getPopularMovies() {
-        int page = 1;
-        var movies = movieApiClient.getPopularMoviesPage(page);
-
-        log.debug("Received {} movies", movies.size());
-        saveReceivedMovies(movies);
-        return true;
+    @Override
+    public void initPopularMovies() {
+        var genres = movieApiClient.getGenres();
+        genreRepository.saveAll(genres);
+        for (int i = 1; i < 6; i++) {
+            var movies = movieApiClient.getPopularMoviesPage(i);
+            saveReceivedMovies(movies);
+        }
     }
 
     private void saveReceivedMovies(List<MovieDto> movies) {

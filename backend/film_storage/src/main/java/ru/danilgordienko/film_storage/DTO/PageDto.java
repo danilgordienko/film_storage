@@ -12,9 +12,9 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PageDto implements Serializable {
+public class PageDto<T> implements Serializable {
     private static final long serialVersionUID = 1L;
-    private List<MovieListCacheDto> content;
+    private List<T> content;
     private int number;
     private long totalElements;
 }

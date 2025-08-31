@@ -128,10 +128,7 @@ public class MovieController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> initMovies(){
         log.info("POST /api/movies/init - Initializing movies");
-        if (!movieService.getPopularMovies()) {
-            log.warn("POST /api/movies/init - Failed to add movies");
-            return ResponseEntity.badRequest().build();
-        }
+        movieService.initPopularMovies();
         log.info("POST /api/movies/init - Movies added successfully");
         return  ResponseEntity.ok().build();
     }

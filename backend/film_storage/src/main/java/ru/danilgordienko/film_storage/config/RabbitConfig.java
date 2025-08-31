@@ -15,12 +15,14 @@ public class RabbitConfig {
     public static final String QUEUE = "movies.queue";
     public static final String POSTER_QUEUE = "movies.poster.queue";
     public static final String MOVIES_PAGE_QUEUE = "movies.page.queue";
+    public static final String MOVIES_GENRE_QUEUE = "movies.genre.queue";
 
     public static final String EXCHANGE = "movies.exchange";
 
     public static final String ROUTING_KEY = "movies.key";
     public static final String ROUTING_KEY_POSTER = "movies.poster.key";
     public static final String ROUTING_KEY_PAGE = "movies.page.key";
+    public static final String ROUTING_KEY_GENRE = "movies.genre.key";
 
     @Bean
     public Queue queue() {
@@ -43,6 +45,11 @@ public class RabbitConfig {
     }
 
     @Bean
+    public Queue moviesGenreQueue() {
+        return new Queue(MOVIES_GENRE_QUEUE, false);
+    }
+
+    @Bean
     public Binding posterBinding(DirectExchange exchange) {
         return BindingBuilder.bind(posterQueue()).to(exchange).with(ROUTING_KEY_POSTER);
     }
@@ -50,6 +57,11 @@ public class RabbitConfig {
     @Bean
     public Binding moviesPageBinding(DirectExchange exchange) {
         return BindingBuilder.bind(moviesPageQueue()).to(exchange).with(ROUTING_KEY_PAGE);
+    }
+
+    @Bean
+    public Binding moviesGenreBinding(DirectExchange exchange) {
+        return BindingBuilder.bind(moviesGenreQueue()).to(exchange).with(ROUTING_KEY_GENRE);
     }
 
     @Bean

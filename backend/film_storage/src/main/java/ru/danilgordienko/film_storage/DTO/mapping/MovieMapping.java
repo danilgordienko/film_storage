@@ -49,9 +49,11 @@ public interface MovieMapping {
 
     Movie toMovie(MovieDto movie);
 
-    PageDto toPageDto(Page<MovieListCacheDto> movie);
+    PageDto<MovieListCacheDto> toPageDto(Page<MovieListCacheDto> movie);
 
-    PageDto toMovieListPageDto(Page<MovieListDto> movie);
+    PageDto<MovieListDto> toMovieListPageDto(Page<MovieDocument> movie);
+
+    PageDto<MovieListCacheDto> toMovieListCachePageDto(Page<Movie> movie);
 
 
     //преобразует жанры в список с названиями жанров

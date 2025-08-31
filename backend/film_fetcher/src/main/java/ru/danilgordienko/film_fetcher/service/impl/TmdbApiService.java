@@ -1,5 +1,6 @@
 package ru.danilgordienko.film_fetcher.service.impl;
 
+import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import ru.danilgordienko.film_fetcher.config.RabbitConfig;
-import ru.danilgordienko.film_fetcher.model.dto.request.TmdbMovie;
+import ru.danilgordienko.film_fetcher.model.dto.response.MovieDto;
 import ru.danilgordienko.film_fetcher.model.dto.response.TmdbResponse;
 import ru.danilgordienko.film_fetcher.model.dto.request.Genre;
 import ru.danilgordienko.film_fetcher.model.enums.RetryableTaskType;
@@ -41,8 +42,9 @@ public class TmdbApiService implements MovieApiService {
         return "https://api.themoviedb.org/3/genre/movie/list?api_key=" + API_KEY + "&language=ru-RU";
     }
 
-    private String getMovieUrl() {
-        return "https://api.themoviedb.org/3/movie/popular?api_key=" + API_KEY + "&language=ru-RU";
+    private String getMovieUrl(int page) {
+        return "https://api.themoviedb.org/3/movie/popular?api_key=" + API_KEY +
+                "&language=ru-RU&page=" + page;
     }
 
     private String getImageUrl() {
@@ -60,7 +62,14 @@ public class TmdbApiService implements MovieApiService {
                 "&vote_average.gte=6";
     }
 
+    @PostConstruct
+    public void init() {
+        loadGenres();
+    }
+
+
     @Scheduled(cron = "0 0 3 * * MON")
+    //@Scheduled(cron = "0 * * * * *")
     public void populateMovies(){
         getRecentlyReleasedMovies(7)
                 .doOnNext(movies -> {
@@ -75,12 +84,24 @@ public class TmdbApiService implements MovieApiService {
         return downloadPoster(posterPath).block();
     }
 
+    @RabbitListener(queues = RabbitConfig.MOVIES_PAGE_QUEUE)
+    public List<MovieDto> handleMoviesRequest(int page) {
+        var res = getPopularMovies(page).block();
+        return res;
+    }
+
+    public List<Genre> getGenres(){
+        log.debug("Attempting to fetch genres");
+        //loadGenres();
+        return genres.values().stream().toList();
+    }
+
     @Override
-    public Mono<List<TmdbMovie>> getPopularMovies() {
+    public Mono<List<MovieDto>> getPopularMovies(int page) {
         log.debug("Attempting to fetch popular movies via TMDB API");
-        loadGenres();
+        //loadGenres();
         return webClient.get()
-                .uri(getMovieUrl())
+                .uri(getMovieUrl(page))
                 .retrieve()
                 .bodyToMono(TmdbResponse.class)
                 .map(r -> {
@@ -151,9 +172,9 @@ public class TmdbApiService implements MovieApiService {
     }
 
     @Override
-    public Mono<List<TmdbMovie>> getRecentlyReleasedMovies(int days) {
+    public Mono<List<MovieDto>> getRecentlyReleasedMovies(int days) {
         log.debug("Attempting to fetch recently released movies via TMDB API");
-        loadGenres();
+        //loadGenres();
 
         LocalDate today = LocalDate.now();
         LocalDate startDate = today.minusDays(days);

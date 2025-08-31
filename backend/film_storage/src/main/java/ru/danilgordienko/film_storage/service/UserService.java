@@ -3,6 +3,7 @@ package ru.danilgordienko.film_storage.service;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import ru.danilgordienko.film_storage.DTO.PageDto;
 import ru.danilgordienko.film_storage.DTO.UsersDto.*;
 import ru.danilgordienko.film_storage.model.User;
 
@@ -13,7 +14,7 @@ public interface UserService extends UserDetailsService {
 
     User getUserByUsername(String username);
     User getUserById(Long id);
-    List<UserListDto> searchUserByUsername(String query);
+    PageDto<UserListDto> searchUserByUsername(String query, int page);
     void saveUser(User user);
     UserInfoDto getUserInfo(Long id);
     UserFriendsDto getUserFriends(Long id);
@@ -24,6 +25,6 @@ public interface UserService extends UserDetailsService {
                     String username);
     void updateUserPassword(UserChangePasswordDto  userChangePasswordDto,
                             String username);
-
     User getUserByEmail(String email);
+    PageDto<UserListDto> getAllUsers(int page);
 }

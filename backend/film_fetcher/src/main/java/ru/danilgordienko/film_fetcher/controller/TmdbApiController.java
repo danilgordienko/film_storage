@@ -6,7 +6,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
-import ru.danilgordienko.film_fetcher.model.dto.request.TmdbMovie;
+import ru.danilgordienko.film_fetcher.model.dto.request.Genre;
+import ru.danilgordienko.film_fetcher.model.dto.response.MovieDto;
 import ru.danilgordienko.film_fetcher.service.MovieApiService;
 
 import java.util.List;
@@ -25,18 +26,26 @@ public class TmdbApiController {
 //    }
 
     @GetMapping("/movies/popular")
-    public Mono<List<TmdbMovie>> getPopularMovies() {
+    public Mono<List<MovieDto>> getPopularMovies(@RequestParam int page) {
         log.info("GET /movies/popular, request received to fetch popular movies");
-        var response = tmdbApiService.getPopularMovies();
+        var response = tmdbApiService.getPopularMovies(page);
         log.info("Popular movies fetched successfully");
         return response;
     }
 
     @GetMapping("/movies/recent")
-    public Mono<List<TmdbMovie>> getRecentMovies() {
+    public Mono<List<MovieDto>> getRecentMovies() {
         log.info("GET /movies/recent, request received to fetch recently released movies");
         var response = tmdbApiService.getRecentlyReleasedMovies(7);
         log.info("Recently released movies fetched successfully");
+        return response;
+    }
+
+    @GetMapping("/movies/genres")
+    public List<Genre> getGenres() {
+        log.info("GET /movies/recent, request received to fetch movies genres");
+        var response = tmdbApiService.getGenres();
+        log.info("Genres fetched successfully");
         return response;
     }
 

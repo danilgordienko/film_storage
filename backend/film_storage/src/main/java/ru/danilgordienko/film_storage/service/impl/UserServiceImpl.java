@@ -6,12 +6,15 @@ import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.multipart.MultipartFile;
+import ru.danilgordienko.film_storage.DTO.PageDto;
 import ru.danilgordienko.film_storage.DTO.UsersDto.*;
 import ru.danilgordienko.film_storage.DTO.mapping.UserMapping;
 import ru.danilgordienko.film_storage.exception.DatabaseConnectionException;
@@ -36,6 +39,7 @@ public class UserServiceImpl implements UserService {
     private final UserMapping userMapping;
     private final UserSearchRepository userSearchRepository;
     private final PasswordEncoder passwordEncoder;
+    private final int size = 20;
 
     //загрузка пользователей по username. нужен для spring security для авторизации пользователя
     @Override
@@ -83,6 +87,13 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+    public PageDto<UserListDto> getAllUsers(int page) {
+        log.debug("Fetching users page {}", page);
+        Pageable pageable = PageRequest.of(page, size);
+        var users = userRepository.findAll(pageable);
+        return userMapping.toUserListDtoPage(users);
+    }
+
     //получение пользователей по id.
     @Override
     public User getUserById(Long id) {
@@ -101,20 +112,12 @@ public class UserServiceImpl implements UserService {
 
     // поиск пользователя по имени из Elasticsearch
     @Override
-    public List<UserListDto> searchUserByUsername(String query){
+    public PageDto<UserListDto> searchUserByUsername(String query, int page){
         try {
             log.debug("Searching users in Elasticsearch by username: {}", query);
-
-            var searchResults = userSearchRepository.searchByUsernameContaining(query);
-            var users = searchResults.stream()
-                    .map(user -> {
-                        var u = getUserById(user.getId());
-                        return userMapping.toUserListDto(u);
-                    }).toList();
-
-            log.debug("Found {} users in Elasticsearch for query '{}'", users.size(), query);
-
-            return users;
+            Pageable pageable = PageRequest.of(page, size);
+            var searchResults = userSearchRepository.searchByUsernameContaining(query,  pageable);
+            return userMapping.toUserListDtoPageFromUserDocument(searchResults);
         } catch (ElasticsearchException | RestClientException e) {
             log.error("Elasticsearch access error", e);
             throw new ElasticsearchConnectionException("Failed to search user in Elasticsearch", e);
@@ -132,18 +135,21 @@ public class UserServiceImpl implements UserService {
     }
 
     // получение информации о пользователе
+    @Override
     public UserInfoDto getUserInfo(Long id) {
         User user = getUserById(id);
         return userMapping.toUserInfoDto(user);
     }
 
     // получение друзей пользователя
+    @Override
     public UserFriendsDto getUserFriends(Long id) {
         User user = getUserById(id);
         return userMapping.toUserFriendsDto(user);
     }
 
     // получение информации о пользователе по его email
+    @Override
     public UserInfoDto getUserInfoByUsername(String username){
         User user = getUserByEmail(username);
         return userMapping.toUserInfoDto(user);

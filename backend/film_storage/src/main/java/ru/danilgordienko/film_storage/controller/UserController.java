@@ -11,6 +11,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import ru.danilgordienko.film_storage.DTO.PageDto;
 import ru.danilgordienko.film_storage.DTO.UsersDto.*;
 import ru.danilgordienko.film_storage.service.UserService;
 
@@ -33,6 +34,15 @@ public class UserController {
         return ResponseEntity.ok(userInfoDto);
     }
 
+    // получение страницы с пользователями
+    @GetMapping
+    public ResponseEntity<PageDto<UserListDto>> getAllUsers(@RequestParam(defaultValue = "0") int page) {
+        log.info("GET /api/users/ - Request for fetching users page {}", page);
+        var response = userService.getAllUsers(page);
+        log.info("GET /api/users/ - Users page found, count of users {}", response.getContent().size());
+        return ResponseEntity.ok(response);
+    }
+
     // получение инфо пользователя текущего пользователя
     @GetMapping("/me/info")
     public ResponseEntity<UserInfoDto> getCurrentUserInfo(@AuthenticationPrincipal UserDetails userDetails) {
@@ -44,14 +54,16 @@ public class UserController {
 
     // поиск пользователя по запросу query
     @GetMapping("/search")
-    public ResponseEntity<List<UserListDto>> searchUsers(@RequestParam("query") String query) {
+    public ResponseEntity<PageDto<UserListDto>> searchUsers(
+            @RequestParam("query") String query,
+            @RequestParam("page") int page) {
         log.info("GET /api/users/search - Search users request by query: '{}'", query);
-        List<UserListDto> users = userService.searchUserByUsername(query);
-        if (users.isEmpty()) {
-            log.warn("GET /api/users/search - No users found for query '{}'", query);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        }
-        log.info("GET /api/users/search - Found {} users for query '{}'", users.size(), query);
+        PageDto<UserListDto> users = userService.searchUserByUsername(query, page);
+//        if (users.getContent().isEmpty()) {
+//            log.warn("GET /api/users/search - No users found for query '{}'", query);
+//            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+//        }
+        log.info("GET /api/users/search - Found {} users for query '{}'", users.getContent().size(), query);
         return ResponseEntity.ok(users);
     }
 

@@ -1,10 +1,11 @@
-package ru.danilgordienko.film_fetcher.model.dto.request;
+package ru.danilgordienko.film_fetcher.model.dto.response;
 
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import ru.danilgordienko.film_fetcher.model.dto.request.Genre;
 
 import java.util.List;
 
@@ -13,7 +14,7 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class TmdbMovie {
+public class MovieDto {
 
     private String title;
 

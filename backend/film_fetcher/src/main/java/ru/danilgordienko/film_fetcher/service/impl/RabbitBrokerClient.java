@@ -6,7 +6,6 @@ import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import ru.danilgordienko.film_fetcher.config.RabbitConfig;
-import ru.danilgordienko.film_fetcher.model.dto.request.TmdbMovie;
 import ru.danilgordienko.film_fetcher.model.dto.response.TmdbMovieResponse;
 import ru.danilgordienko.film_fetcher.service.BrokerClient;
 

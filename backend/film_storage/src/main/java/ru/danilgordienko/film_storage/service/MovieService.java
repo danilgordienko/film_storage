@@ -18,7 +18,7 @@ public interface MovieService {
     List<MovieListDto> searchMoviesByTitle(String query);
     PageDto searchMoviesPageByTitle(String query, int page);
     byte[] getPoster(Long id);
-    boolean getPopularMovies();
+    void initPopularMovies();
     void populateMovies(MovieApiClient.MoviesReceivedEvent event);
     void deleteMovie(Long id);
     void addMovie(Long id);

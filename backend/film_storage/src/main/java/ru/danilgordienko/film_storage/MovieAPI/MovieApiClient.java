@@ -17,6 +17,7 @@ import ru.danilgordienko.film_storage.config.RabbitConfig;
 import ru.danilgordienko.film_storage.model.Genre;
 import ru.danilgordienko.film_storage.model.Movie;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,6 +28,7 @@ public class MovieApiClient {
 
     private final RabbitTemplate rabbitTemplate;
     private final ApplicationEventPublisher eventPublisher;
+    private final RestTemplate restTemplate;
     private final int size = 20;
 
     private Optional<Object> getRabbitResponse(String exchange, String routingKey, Object body) {
@@ -59,13 +61,52 @@ public class MovieApiClient {
         }).orElse(new byte[0]);
     }
 
+    public List<Genre> getGenres() {
+        log.debug("Getting genres");
+        String url = "http://localhost:8082/api/tmdb/movies/genres";
+        Genre[] responseArray = restTemplate.getForObject(url, Genre[].class);
+        if (responseArray == null || responseArray.length == 0) {
+            log.warn("No response received from movie service");
+            return List.of();
+        }
+        return Arrays.stream(responseArray).toList();
+    }
+
+//    public List<MovieDto> getPopularMoviesPage(int page){
+//        log.debug("Getting popular movies page {}", page);
+//        var response = getRabbitResponse(
+//                RabbitConfig.EXCHANGE,
+//                RabbitConfig.ROUTING_KEY_PAGE,
+//                page
+//        );
+//
+//        if (response.isEmpty()) {
+//            log.warn("No response received from movie service");
+//            return List.of();
+//        }
+//
+//        List<MovieDto> movies;
+//        try {
+//            movies = (List<MovieDto>) response.get();
+//        } catch (ClassCastException e) {
+//            log.error("Type casting error: {}", e.getMessage());
+//            return List.of();
+//        }
+//        log.debug("Received popular movies page {}", page);
+//        return movies;
+//    }
+
     public List<MovieDto> getPopularMoviesPage(int page){
         log.debug("Getting popular movies page {}", page);
-        var response = getRabbitResponse(
-                RabbitConfig.EXCHANGE,
-                RabbitConfig.ROUTING_KEY_PAGE,
-                page
-        );
+        String url = "http://localhost:8082/api/tmdb/movies/popular?page={page}";
+
+        MovieDto[] responseArray = restTemplate.getForObject(url, MovieDto[].class, page);
+        if (responseArray == null || responseArray.length == 0) {
+            log.warn("No response received from movie service");
+            return List.of();
+        }
+
+        var response = Arrays.stream(responseArray).toList();
 
         if (response.isEmpty()) {
             log.warn("No response received from movie service");
@@ -74,11 +115,12 @@ public class MovieApiClient {
 
         List<MovieDto> movies;
         try {
-            movies = (List<MovieDto>) response.get();
+            movies = response;
         } catch (ClassCastException e) {
             log.error("Type casting error: {}", e.getMessage());
             return List.of();
         }
+        log.debug("Received popular movies page {}", page);
         return movies;
     }
 
