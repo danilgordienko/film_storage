@@ -3,11 +3,9 @@ package ru.danilgordienko.film_storage.service;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import ru.danilgordienko.film_storage.DTO.PageDto;
-import ru.danilgordienko.film_storage.DTO.UsersDto.*;
-import ru.danilgordienko.film_storage.model.User;
-
-import java.util.List;
+import ru.danilgordienko.film_storage.model.dto.PageDto;
+import ru.danilgordienko.film_storage.model.dto.UsersDto.*;
+import ru.danilgordienko.film_storage.model.entity.User;
 
 @Service
 public interface UserService extends UserDetailsService {

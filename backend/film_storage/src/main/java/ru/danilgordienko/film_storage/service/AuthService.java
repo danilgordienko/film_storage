@@ -1,9 +1,9 @@
 package ru.danilgordienko.film_storage.service;
 
 import org.springframework.stereotype.Service;
-import ru.danilgordienko.film_storage.DTO.AuthResponse;
-import ru.danilgordienko.film_storage.DTO.UsersDto.UserLoginDto;
-import ru.danilgordienko.film_storage.DTO.UsersDto.UserRegistrationDTO;
+import ru.danilgordienko.film_storage.model.dto.AuthResponse;
+import ru.danilgordienko.film_storage.model.dto.UsersDto.UserLoginDto;
+import ru.danilgordienko.film_storage.model.dto.UsersDto.UserRegistrationDTO;
 
 @Service
 public interface AuthService {

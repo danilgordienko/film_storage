@@ -3,16 +3,14 @@ package ru.danilgordienko.film_storage.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieDetailsDto;
-import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieListDto;
-import ru.danilgordienko.film_storage.DTO.PageDto;
-import ru.danilgordienko.film_storage.model.Movie;
+import ru.danilgordienko.film_storage.model.dto.MoviesDto.MovieDetailsDto;
+import ru.danilgordienko.film_storage.model.dto.MoviesDto.MovieListDto;
+import ru.danilgordienko.film_storage.model.dto.PageDto;
 import ru.danilgordienko.film_storage.service.MovieService;
 
 import java.util.List;

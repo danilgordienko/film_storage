@@ -11,7 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import ru.danilgordienko.film_storage.MovieAPI.MovieApiClient;
-import ru.danilgordienko.film_storage.model.Genre;
+import ru.danilgordienko.film_storage.model.entity.Genre;
 
 import java.util.List;
 

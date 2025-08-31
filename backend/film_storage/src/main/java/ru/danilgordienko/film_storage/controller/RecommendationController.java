@@ -6,10 +6,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-import ru.danilgordienko.film_storage.DTO.RecommendationDto;
+import ru.danilgordienko.film_storage.model.dto.RecommendationDto;
 import ru.danilgordienko.film_storage.service.RecommendationService;
 
-import javax.management.InstanceAlreadyExistsException;
 import java.util.List;
 
 @RestController

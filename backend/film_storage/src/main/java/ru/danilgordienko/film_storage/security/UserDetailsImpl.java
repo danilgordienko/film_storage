@@ -5,7 +5,7 @@ import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import ru.danilgordienko.film_storage.model.User;
+import ru.danilgordienko.film_storage.model.entity.User;
 
 import java.util.*;
 import java.util.stream.Collectors;

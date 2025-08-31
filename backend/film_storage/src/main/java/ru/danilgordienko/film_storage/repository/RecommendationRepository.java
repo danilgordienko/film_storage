@@ -2,12 +2,10 @@ package ru.danilgordienko.film_storage.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import ru.danilgordienko.film_storage.DTO.RecommendationDto;
-import ru.danilgordienko.film_storage.model.Movie;
-import ru.danilgordienko.film_storage.model.Recommendation;
-import ru.danilgordienko.film_storage.model.User;
+import ru.danilgordienko.film_storage.model.entity.Movie;
+import ru.danilgordienko.film_storage.model.entity.Recommendation;
+import ru.danilgordienko.film_storage.model.entity.User;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 

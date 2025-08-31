@@ -14,21 +14,20 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.multipart.MultipartFile;
-import ru.danilgordienko.film_storage.DTO.PageDto;
-import ru.danilgordienko.film_storage.DTO.UsersDto.*;
-import ru.danilgordienko.film_storage.DTO.mapping.UserMapping;
+import ru.danilgordienko.film_storage.model.dto.PageDto;
+import ru.danilgordienko.film_storage.model.dto.UsersDto.*;
+import ru.danilgordienko.film_storage.model.dto.mapping.UserMapping;
 import ru.danilgordienko.film_storage.exception.DatabaseConnectionException;
 import ru.danilgordienko.film_storage.exception.ElasticsearchConnectionException;
 import ru.danilgordienko.film_storage.exception.UserNotFoundException;
 import ru.danilgordienko.film_storage.exception.UserUpdateException;
-import ru.danilgordienko.film_storage.model.User;
+import ru.danilgordienko.film_storage.model.entity.User;
 import ru.danilgordienko.film_storage.repository.UserRepository;
 import ru.danilgordienko.film_storage.repository.UserSearchRepository;
 import ru.danilgordienko.film_storage.security.UserDetailsImpl;
 import ru.danilgordienko.film_storage.service.UserService;
 
 import java.io.IOException;
-import java.util.List;
 
 @Service
 @AllArgsConstructor

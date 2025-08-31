@@ -7,9 +7,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import ru.danilgordienko.film_storage.DTO.AuthResponse;
-import ru.danilgordienko.film_storage.DTO.UsersDto.UserLoginDto;
-import ru.danilgordienko.film_storage.DTO.UsersDto.UserRegistrationDTO;
+import ru.danilgordienko.film_storage.model.dto.AuthResponse;
+import ru.danilgordienko.film_storage.model.dto.UsersDto.UserLoginDto;
+import ru.danilgordienko.film_storage.model.dto.UsersDto.UserRegistrationDTO;
 import ru.danilgordienko.film_storage.service.AuthService;
 
 @RestController

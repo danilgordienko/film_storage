@@ -1,11 +1,11 @@
 package ru.danilgordienko.film_storage.service;
 
 import org.springframework.stereotype.Service;
-import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieDetailsDto;
-import ru.danilgordienko.film_storage.DTO.MoviesDto.MovieListDto;
-import ru.danilgordienko.film_storage.DTO.PageDto;
+import ru.danilgordienko.film_storage.model.dto.MoviesDto.MovieDetailsDto;
+import ru.danilgordienko.film_storage.model.dto.MoviesDto.MovieListDto;
+import ru.danilgordienko.film_storage.model.dto.PageDto;
 import ru.danilgordienko.film_storage.MovieAPI.MovieApiClient;
-import ru.danilgordienko.film_storage.model.Movie;
+import ru.danilgordienko.film_storage.model.entity.Movie;
 
 import java.util.List;
 

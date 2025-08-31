@@ -1,7 +1,7 @@
 package ru.danilgordienko.film_storage.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import ru.danilgordienko.film_storage.model.Genre;
+import ru.danilgordienko.film_storage.model.entity.Genre;
 
 import java.util.Optional;
 

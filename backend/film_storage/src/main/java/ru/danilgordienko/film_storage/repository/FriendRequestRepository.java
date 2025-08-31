@@ -2,8 +2,8 @@ package ru.danilgordienko.film_storage.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import ru.danilgordienko.film_storage.model.FriendRequest;
-import ru.danilgordienko.film_storage.model.User;
+import ru.danilgordienko.film_storage.model.entity.FriendRequest;
+import ru.danilgordienko.film_storage.model.entity.User;
 
 import java.util.List;
 import java.util.Optional;
