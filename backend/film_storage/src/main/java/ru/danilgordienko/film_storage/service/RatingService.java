@@ -8,5 +8,5 @@ import ru.danilgordienko.film_storage.model.dto.UsersDto.UserRatingDto;
 public interface RatingService {
     void addRating(Long id, RatingDto rating, String username);
     UserRatingDto getUserRatingsByUsername(String username);
-    UserRatingDto getUserRatings(Long id);
+    UserRatingDto getUserRatings(Long id, String username);
 }

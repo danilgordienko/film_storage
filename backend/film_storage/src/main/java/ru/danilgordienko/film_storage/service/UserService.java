@@ -6,6 +6,7 @@ import org.springframework.web.multipart.MultipartFile;
 import ru.danilgordienko.film_storage.model.dto.PageDto;
 import ru.danilgordienko.film_storage.model.dto.UsersDto.*;
 import ru.danilgordienko.film_storage.model.entity.User;
+import ru.danilgordienko.film_storage.model.enums.RatingVisibility;
 
 @Service
 public interface UserService extends UserDetailsService {
@@ -25,4 +26,7 @@ public interface UserService extends UserDetailsService {
                             String username);
     User getUserByEmail(String email);
     PageDto<UserListDto> getAllUsers(int page);
+    void setRatingVisibility(RatingVisibility ratingVisibility, String username);
+
+    UserSettingsDto getSettings(String username);
 }

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ru.danilgordienko.film_storage.model.dto.PageDto;
 import ru.danilgordienko.film_storage.model.dto.UsersDto.*;
+import ru.danilgordienko.film_storage.model.enums.RatingVisibility;
 import ru.danilgordienko.film_storage.service.UserService;
 
 @RequiredArgsConstructor
@@ -85,11 +86,30 @@ public class UserController {
 
     @PostMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> deleteUser(@RequestParam Long id) {
+    public ResponseEntity<String> deleteUser(@PathVariable Long id) {
         log.info("POST /api/users/{id} - Request to delete user with id={}", id);
         userService.deleteUser(id);
         log.info("POST /api/users/{id} - User with id={} deleted successfully", id);
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("me/ratings/visibility")
+    public ResponseEntity<String> setRatingsVisibility(
+            @RequestParam RatingVisibility visibility,
+            @AuthenticationPrincipal UserDetails userDetails){
+        log.info("POST /api/users/me/ratings/visibility - Request to set rating visibility to {}", visibility);
+        userService.setRatingVisibility(visibility, userDetails.getUsername());
+        log.info("POST /api/users/me/ratings/visibility - Successfully set rating visibility to {}", visibility);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("me/settings")
+    public ResponseEntity<UserSettingsDto> getSettings(
+            @AuthenticationPrincipal UserDetails userDetails){
+        log.info("POST /api/users/me/settings - Request to get settings of user {}", userDetails.getUsername());
+        var response = userService.getSettings(userDetails.getUsername());
+        log.info("POST /api/users/me/settings - Successfully get settings of user {}", userDetails.getUsername());
+        return ResponseEntity.ok(response);
     }
 
 }

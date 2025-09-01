@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
+import ru.danilgordienko.film_storage.exception.RatingNotVisibleException;
 import ru.danilgordienko.film_storage.model.dto.RatingDto;
 import ru.danilgordienko.film_storage.model.dto.UsersDto.UserRatingDto;
 import ru.danilgordienko.film_storage.model.dto.mapping.UserMapping;
@@ -16,6 +17,7 @@ import ru.danilgordienko.film_storage.exception.RatingAlreadyExistsException;
 import ru.danilgordienko.film_storage.model.entity.Movie;
 import ru.danilgordienko.film_storage.model.entity.Rating;
 import ru.danilgordienko.film_storage.model.entity.User;
+import ru.danilgordienko.film_storage.model.enums.RatingVisibility;
 import ru.danilgordienko.film_storage.repository.MovieSearchRepository;
 import ru.danilgordienko.film_storage.repository.RatingRepository;
 import ru.danilgordienko.film_storage.service.MovieService;
@@ -98,17 +100,27 @@ public class RatingServiceImpl implements RatingService {
     }
 
     // получение оценка пользователя по username
+    @Override
     public UserRatingDto getUserRatingsByUsername(String username) {
         User user = userService.getUserByEmail(username);
         log.debug("Retrieving ratings for user '{}'", username);
         return userMapping.toUserRatingDto(user);
     }
 
-
     // получение оценка пользователя по id
-    public UserRatingDto getUserRatings(Long id) {
+    @Override
+    public UserRatingDto getUserRatings(Long id, String username) {
         User user = userService.getUserById(id);
+        User currentUser = userService.getUserByEmail(username);
+        checkAccessable(user, currentUser);
         log.debug("Retrieving ratings for user with ID '{}'", id);
         return userMapping.toUserRatingDto(user);
+    }
+
+    private void checkAccessable(User user, User currentUser) {
+        if (user.getRatingVisibility().equals(RatingVisibility.FRIENDS)){
+            if (!user.getFriends().contains(currentUser))
+                throw new RatingNotVisibleException("User is not friends");
+        }
     }
 }

@@ -4,18 +4,13 @@ package ru.danilgordienko.film_storage.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
-import ru.danilgordienko.film_storage.DTO.RatingDto;
-import ru.danilgordienko.film_storage.DTO.UsersDto.UserRatingDto;
+import ru.danilgordienko.film_storage.model.dto.RatingDto;
+import ru.danilgordienko.film_storage.model.dto.UsersDto.UserRatingDto;
 import ru.danilgordienko.film_storage.service.RatingService;
-
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/ratings")
@@ -50,9 +45,11 @@ public class RatingController {
 
     // получение оценок полльзоваля по id
     @GetMapping("users/{id}")
-    public ResponseEntity<UserRatingDto> getUserRatings(@PathVariable Long id){
+    public ResponseEntity<UserRatingDto> getUserRatings(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails){
         log.info("GET /api/ratings/users/{} - Fetching user ratings", id);
-        UserRatingDto user = ratingService.getUserRatings(id);
+        UserRatingDto user = ratingService.getUserRatings(id,  userDetails.getUsername());
         log.info("GET /api/ratings/users/{} - Successfully fetched ratings, count {}", id, user.getRatings().size());
         return ResponseEntity.ok(user);
     }

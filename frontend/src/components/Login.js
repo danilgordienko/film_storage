@@ -32,6 +32,15 @@ const Login = () => {
       localStorage.setItem('access_token', access_token);
       localStorage.setItem('refresh_token', refresh_token);
 
+      const res = await fetch('http://localhost:8081/api/users/me/info', {
+        headers: { Authorization: `Bearer ${access_token}` },
+      });
+      if (res.ok) {
+        const userInfo = await res.json();
+        localStorage.setItem('user_id', userInfo.id);
+      }
+
+
       navigate('/movies');
     } catch (err) {
       alert('Ошибка соединения с сервером');

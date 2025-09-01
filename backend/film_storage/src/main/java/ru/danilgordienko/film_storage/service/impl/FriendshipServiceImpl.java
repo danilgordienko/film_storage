@@ -76,8 +76,8 @@ public class FriendshipServiceImpl implements FriendshipService {
     @Transactional
     public void acceptFriendRequest(String username, Long requesterId) {
         try {
-            var sender = userService.getUserByEmail(username);
-            var receiver = userService.getUserById(requesterId);
+            var receiver = userService.getUserByEmail(username);
+            var sender = userService.getUserById(requesterId);
 
             var request = friendRequestRepository.findBySenderAndReceiver(sender, receiver);
 
@@ -105,8 +105,8 @@ public class FriendshipServiceImpl implements FriendshipService {
     @Transactional
     public void declineFriendRequest(String username, Long requesterId) {
         try {
-            var sender = userService.getUserByEmail(username);
-            var receiver = userService.getUserById(requesterId);
+            var receiver = userService.getUserByEmail(username);
+            var sender = userService.getUserById(requesterId);
 
             var request = friendRequestRepository.findBySenderAndReceiver(sender, receiver);
 

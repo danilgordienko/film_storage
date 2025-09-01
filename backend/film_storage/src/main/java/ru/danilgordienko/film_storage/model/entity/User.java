@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import ru.danilgordienko.film_storage.model.enums.RatingVisibility;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -36,6 +37,10 @@ public class User {
     private String password;
 
     private byte[] avatar;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "rating_visibility", nullable = false)
+    private RatingVisibility ratingVisibility = RatingVisibility.ALL;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))

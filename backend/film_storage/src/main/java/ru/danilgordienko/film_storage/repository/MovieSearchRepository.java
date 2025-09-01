@@ -3,7 +3,7 @@ package ru.danilgordienko.film_storage.repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
-import ru.danilgordienko.film_storage.model.MovieDocument;
+import ru.danilgordienko.film_storage.model.entity.MovieDocument;
 
 import java.util.List;
 

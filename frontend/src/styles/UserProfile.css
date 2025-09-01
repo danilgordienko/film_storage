@@ -211,3 +211,55 @@
 .profile-form button:hover {
   background-color: #007bff;
 }
+
+/* Вкладка Настройки */
+.settings-item {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin: 20px 0;
+  padding: 10px;
+  background-color: #f8f8f8;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.settings-item label {
+  font-weight: 500;
+  margin-right: 15px;
+  color: #333;
+  min-width: 180px;
+}
+
+.settings-item select {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+
+.settings-item select:hover {
+  border-color: #888;
+}
+
+.settings-item select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
+}
+
+/* Мобильная адаптивность */
+@media (max-width: 600px) {
+  .settings-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .settings-item label {
+    margin-bottom: 8px;
+  }
+}
+

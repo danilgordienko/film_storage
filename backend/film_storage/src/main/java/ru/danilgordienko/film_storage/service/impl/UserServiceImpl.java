@@ -22,6 +22,7 @@ import ru.danilgordienko.film_storage.exception.ElasticsearchConnectionException
 import ru.danilgordienko.film_storage.exception.UserNotFoundException;
 import ru.danilgordienko.film_storage.exception.UserUpdateException;
 import ru.danilgordienko.film_storage.model.entity.User;
+import ru.danilgordienko.film_storage.model.enums.RatingVisibility;
 import ru.danilgordienko.film_storage.repository.UserRepository;
 import ru.danilgordienko.film_storage.repository.UserSearchRepository;
 import ru.danilgordienko.film_storage.security.UserDetailsImpl;
@@ -210,6 +211,19 @@ public class UserServiceImpl implements UserService {
             log.error("Database save error", e);
             throw new DatabaseConnectionException("Failed to save user in DB", e);
         }
+    }
+
+    @Override
+    @Transactional
+    public void setRatingVisibility(RatingVisibility ratingVisibility, String username) {
+        User user = getUserByEmail(username);
+        user.setRatingVisibility(ratingVisibility);
+    }
+
+    @Override
+    public UserSettingsDto getSettings(String username) {
+        User user = getUserByEmail(username);
+        return userMapping.toUserSettingDto(user);
     }
 }
 

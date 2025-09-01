@@ -53,6 +53,7 @@ function UserProfile() {
   const [userInfo, setUserInfo] = useState(null);
   const [userRatings, setUserRatings] = useState(null);
   const [userFriends, setUserFriends] = useState(null);
+  const [ratingVisibility, setRatingVisibility] = useState('ALL');
 
   const [showUpdateProfile, setShowUpdateProfile] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
@@ -69,13 +70,7 @@ function UserProfile() {
     newPasswordConfirm: '',
   });
 
-  useEffect(() => {
-    setActiveTab('info');
-    setUserInfo(null);
-    setUserRatings(null);
-    setUserFriends(null);
-  }, [id]);
-
+  // Получение текущего пользователя
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
@@ -91,6 +86,7 @@ function UserProfile() {
     fetchCurrentUser();
   }, []);
 
+  // Загрузка информации о пользователе
   useEffect(() => {
     const fetchInfo = async () => {
       try {
@@ -109,43 +105,113 @@ function UserProfile() {
     fetchInfo();
   }, [id]);
 
+  const [ratingsError, setRatingsError] = useState(null);
+
+  // Сброс данных отзывов при смене пользователя
   useEffect(() => {
-    if (activeTab === 'ratings' && userRatings === null) {
+    setUserRatings(null);
+    setRatingsError(null);
+  }, [id]);
+  
+  // Загрузка отзывов
+  useEffect(() => {
+    if (activeTab === 'ratings') {
       const fetchRatings = async () => {
         try {
           const baseUrl = 'http://localhost:8081/api/ratings';
           const url = isCurrentUserProfile ? `${baseUrl}/users/me` : `${baseUrl}/users/${id}`;
           const res = await authFetch(url);
+  
           if (res.ok) {
             const data = await res.json();
             setUserRatings(data?.ratings ?? []);
+            setRatingsError(null);
+          } else if (res.status === 403) {
+            // Доступ запрещён
+            setUserRatings([]);
+            setRatingsError('Отзывы этого пользователя доступны только друзьям.');
+          } else {
+            const text = await res.text();
+            console.error('Ошибка при загрузке отзывов:', text);
+            setUserRatings([]);
+            setRatingsError('Не удалось загрузить отзывы.');
           }
         } catch (err) {
           console.error('Ошибка при загрузке отзывов:', err);
+          setUserRatings([]);
+          setRatingsError('Ошибка при загрузке отзывов.');
         }
       };
       fetchRatings();
     }
   }, [activeTab, id]);
+  
 
-  useEffect(() => {
-    if (activeTab === 'friends' && userFriends === null) {
-      const fetchFriends = async () => {
-        try {
-          const baseUrl = 'http://localhost:8081/api/users';
-          const url = isCurrentUserProfile ? `http://localhost:8081/api/friends` : `${baseUrl}/${id}/friends`;
-          const res = await authFetch(url);
-          if (res.ok) {
-            const data = await res.json();
-            setUserFriends(data?.friends ?? []);
-          }
-        } catch (err) {
-          console.error('Ошибка при загрузке друзей:', err);
+
+// Сброс данных друзей при смене пользователя
+useEffect(() => {
+  setUserFriends(null);
+}, [id]);
+
+// Загрузка друзей
+useEffect(() => {
+  if (activeTab === 'friends') {
+    const fetchFriends = async () => {
+      try {
+        const baseUrl = 'http://localhost:8081/api/friends';
+        const url = isCurrentUserProfile ? `${baseUrl}` : `${baseUrl}/users/${id}`;
+        const res = await authFetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          setUserFriends(data?.friends ?? []);
         }
-      };
-      fetchFriends();
+      } catch (err) {
+        console.error('Ошибка при загрузке друзей:', err);
+      }
+    };
+    fetchFriends();
+  }
+}, [activeTab, id]);
+
+
+    // Загрузка настроек при открытии вкладки settings
+    useEffect(() => {
+      if (activeTab === 'settings' && isCurrentUserProfile) {
+        const fetchSettings = async () => {
+          try {
+            const res = await authFetch('http://localhost:8081/api/users/me/settings');
+            if (res.ok) {
+              const data = await res.json();
+              setRatingVisibility(data.rating_visibility || 'ALL');
+            }
+          } catch (err) {
+            console.error('Ошибка при загрузке настроек:', err);
+          }
+        };
+        fetchSettings();
+      }
+    }, [activeTab]);
+
+  // Отправка изменения видимости отзывов
+  const handleVisibilityChange = async (e) => {
+    const newVisibility = e.target.value;
+    const visibilityStr = typeof newVisibility === 'string' ? newVisibility : newVisibility.value;
+    try {
+      const res = await authFetch(`http://localhost:8081/api/users/me/ratings/visibility?visibility=${visibilityStr}`, {
+        method: 'POST',
+      });
+      const text = await res.text();
+      if (res.ok) {
+        setRatingVisibility(newVisibility);
+        alert('Настройки видимости отзывов обновлены');
+      } else {
+        console.error('Ошибка обновления видимости:', text);
+        alert('Не удалось обновить настройки видимости');
+      }
+    } catch (err) {
+      console.error('Ошибка при обновлении видимости отзывов:', err);
     }
-  }, [activeTab, id]);
+  };
 
   const handleFriendClick = (friend) => {
     const isMe = currentUserId && friend.id === currentUserId;
@@ -168,39 +234,36 @@ function UserProfile() {
     }
   };
 
-const handleUpdateProfile = async (e) => {
-  e.preventDefault();
-  const formData = new FormData();
-  formData.append('username', updateProfileData.username);
-  formData.append('email', updateProfileData.email);
-  if (updateProfileData.avatar) formData.append('avatar', updateProfileData.avatar);
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append('username', updateProfileData.username);
+    formData.append('email', updateProfileData.email);
+    if (updateProfileData.avatar) formData.append('avatar', updateProfileData.avatar);
 
-  try {
-    const res = await fetch('http://localhost:8081/api/users/me/profile/update', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-      },
-      body: formData,
-    });
+    try {
+      const res = await fetch('http://localhost:8081/api/users/me/profile/update', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+        },
+        body: formData,
+      });
 
-    if (!res.ok) throw new Error('Ошибка при обновлении профиля');
+      if (!res.ok) throw new Error('Ошибка при обновлении профиля');
 
-    // После успешного обновления заново запрашиваем информацию
-    const infoRes = await authFetch('http://localhost:8081/api/users/me/info');
-    if (!infoRes.ok) throw new Error('Ошибка при получении обновленного профиля');
+      const infoRes = await authFetch('http://localhost:8081/api/users/me/info');
+      if (!infoRes.ok) throw new Error('Ошибка при получении обновленного профиля');
 
-    const data = await infoRes.json();
-    setUserInfo(data);
-    setUpdateProfileData({ username: data.username, email: data.email, avatar: null });
-    alert('Профиль обновлён');
-    setShowUpdateProfile(false);
-  } catch (err) {
-    alert(err.message);
-  }
-};
-
-  
+      const data = await infoRes.json();
+      setUserInfo(data);
+      setUpdateProfileData({ username: data.username, email: data.email, avatar: null });
+      alert('Профиль обновлён');
+      setShowUpdateProfile(false);
+    } catch (err) {
+      alert(err.message);
+    }
+  };
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
@@ -252,95 +315,97 @@ const handleUpdateProfile = async (e) => {
               <h3>{userInfo?.username ?? 'Загрузка...'}</h3>
 
               {isCurrentUserProfile && (
-  <div className="profile-actions">
-    <button onClick={() => setShowUpdateProfile(true)}>Обновить профиль</button>
-    <button onClick={() => setShowChangePassword(true)}>Сменить пароль</button>
-    <button className="logout-btn" onClick={handleLogout}>Выйти</button>
-  </div>
-)}
+                <div className="profile-actions">
+                  <button onClick={() => setShowUpdateProfile(true)}>Обновить профиль</button>
+                  <button onClick={() => setShowChangePassword(true)}>Сменить пароль</button>
+                  <button className="logout-btn" onClick={handleLogout}>Выйти</button>
+                </div>
+              )}
 
-{showUpdateProfile && (
-  <div className="modal-overlay" onClick={() => setShowUpdateProfile(false)}>
-    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-      <button className="modal-close" onClick={() => setShowUpdateProfile(false)}>×</button>
-      <form onSubmit={handleUpdateProfile} className="profile-form">
-        <input
-          type="text"
-          placeholder="Имя пользователя"
-          value={updateProfileData.username}
-          onChange={(e) => setUpdateProfileData({ ...updateProfileData, username: e.target.value })}
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          value={updateProfileData.email}
-          onChange={(e) => setUpdateProfileData({ ...updateProfileData, email: e.target.value })}
-        />
-        <input
-          type="file"
-          onChange={(e) => setUpdateProfileData({ ...updateProfileData, avatar: e.target.files[0] })}
-        />
-        <button type="submit">Сохранить</button>
-      </form>
-    </div>
-  </div>
-)}
+              {showUpdateProfile && (
+                <div className="modal-overlay" onClick={() => setShowUpdateProfile(false)}>
+                  <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                    <button className="modal-close" onClick={() => setShowUpdateProfile(false)}>×</button>
+                    <form onSubmit={handleUpdateProfile} className="profile-form">
+                      <input
+                        type="text"
+                        placeholder="Имя пользователя"
+                        value={updateProfileData.username}
+                        onChange={(e) => setUpdateProfileData({ ...updateProfileData, username: e.target.value })}
+                      />
+                      <input
+                        type="email"
+                        placeholder="Email"
+                        value={updateProfileData.email}
+                        onChange={(e) => setUpdateProfileData({ ...updateProfileData, email: e.target.value })}
+                      />
+                      <input
+                        type="file"
+                        onChange={(e) => setUpdateProfileData({ ...updateProfileData, avatar: e.target.files[0] })}
+                      />
+                      <button type="submit">Сохранить</button>
+                    </form>
+                  </div>
+                </div>
+              )}
 
-{showChangePassword && (
-  <div className="modal-overlay" onClick={() => setShowChangePassword(false)}>
-    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-      <button className="modal-close" onClick={() => setShowChangePassword(false)}>×</button>
-      <form onSubmit={handleChangePassword} className="profile-form">
-        <input
-          type="password"
-          placeholder="Старый пароль"
-          value={passwordData.oldPassword}
-          onChange={(e) => setPasswordData({ ...passwordData, oldPassword: e.target.value })}
-        />
-        <input
-          type="password"
-          placeholder="Новый пароль"
-          value={passwordData.newPassword}
-          onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-        />
-        <input
-          type="password"
-          placeholder="Подтверждение нового пароля"
-          value={passwordData.newPasswordConfirm}
-          onChange={(e) => setPasswordData({ ...passwordData, newPasswordConfirm: e.target.value })}
-        />
-        <button type="submit">Сменить пароль</button>
-      </form>
-    </div>
-  </div>
-)}
-
+              {showChangePassword && (
+                <div className="modal-overlay" onClick={() => setShowChangePassword(false)}>
+                  <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                    <button className="modal-close" onClick={() => setShowChangePassword(false)}>×</button>
+                    <form onSubmit={handleChangePassword} className="profile-form">
+                      <input
+                        type="password"
+                        placeholder="Старый пароль"
+                        value={passwordData.oldPassword}
+                        onChange={(e) => setPasswordData({ ...passwordData, oldPassword: e.target.value })}
+                      />
+                      <input
+                        type="password"
+                        placeholder="Новый пароль"
+                        value={passwordData.newPassword}
+                        onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                      />
+                      <input
+                        type="password"
+                        placeholder="Подтверждение нового пароля"
+                        value={passwordData.newPasswordConfirm}
+                        onChange={(e) => setPasswordData({ ...passwordData, newPasswordConfirm: e.target.value })}
+                      />
+                      <button type="submit">Сменить пароль</button>
+                    </form>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         );
 
-      case 'ratings':
-        return (
-          <div className="tab-content">
-            <h3>Отзывы</h3>
-            {userRatings === null ? (
-              <p>Загрузка...</p>
-            ) : userRatings.length === 0 ? (
-              <p>Нет отзывов.</p>
-            ) : (
-              <div className="card-grid">
-                {userRatings.map((r, idx) => (
-                  <div key={idx} className="card">
-                    <h4>{r.movie.title}</h4>
-                    <p><strong>{r.rating}/10</strong></p>
-                    <p>{r.comment}</p>
-                    <button onClick={() => navigate(`/movies/${r.movie.id}`)}>К фильму</button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        );
+        case 'ratings':
+          return (
+            <div className="tab-content">
+              <h3>Отзывы</h3>
+              {userRatings === null ? (
+                <p>Загрузка...</p>
+              ) : ratingsError ? (
+                <p>{ratingsError}</p>
+              ) : userRatings.length === 0 ? (
+                <p>Нет отзывов.</p>
+              ) : (
+                <div className="card-grid">
+                  {userRatings.map((r, idx) => (
+                    <div key={idx} className="card">
+                      <h4>{r.movie.title}</h4>
+                      <p><strong>{r.rating}/10</strong></p>
+                      <p>{r.comment}</p>
+                      <button onClick={() => navigate(`/movies/${r.movie.id}`)}>К фильму</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        
 
       case 'friends':
         return (
@@ -385,6 +450,24 @@ const handleUpdateProfile = async (e) => {
           </div>
         );
 
+        case 'settings':
+          return (
+            <div className="tab-content">
+              <h3>Настройки</h3>
+              {isCurrentUserProfile ? (
+                <div className="settings-item">
+                  <label>Видимость ваших отзывов:</label>
+                  <select value={ratingVisibility} onChange={handleVisibilityChange}>
+                    <option value="ALL">Все</option>
+                    <option value="FRIENDS">Только друзья</option>
+                  </select>
+                </div>
+              ) : (
+                <p>Вы не можете изменять настройки другого пользователя.</p>
+              )}
+            </div>
+          );
+
       default:
         return null;
     }
@@ -397,6 +480,9 @@ const handleUpdateProfile = async (e) => {
         <button className={activeTab === 'info' ? 'active' : ''} onClick={() => setActiveTab('info')}>Информация</button>
         <button className={activeTab === 'ratings' ? 'active' : ''} onClick={() => setActiveTab('ratings')}>Отзывы</button>
         <button className={activeTab === 'friends' ? 'active' : ''} onClick={() => setActiveTab('friends')}>Друзья</button>
+        {isCurrentUserProfile && (
+          <button className={activeTab === 'settings' ? 'active' : ''} onClick={() => setActiveTab('settings')}>Настройки</button>
+        )}
       </div>
       {renderTabContent()}
     </div>

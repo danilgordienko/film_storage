@@ -7,12 +7,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import ru.danilgordienko.film_storage.model.Movie;
-import ru.danilgordienko.film_storage.repository.MovieRepository;
-import ru.danilgordienko.film_storage.repository.UserRepository;
 import ru.danilgordienko.film_storage.service.MovieService;
 
 import java.util.List;

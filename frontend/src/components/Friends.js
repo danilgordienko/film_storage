@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react'; 
 import { useNavigate } from 'react-router-dom';
 import '../styles/Friends.css';
 
@@ -19,7 +19,6 @@ async function authFetch(url, options = {}) {
   let res = await doFetch(accessToken);
 
   if (res.status === 403 && refreshToken) {
-    // пробуем обновить токен
     const refreshRes = await fetch('http://localhost:8081/api/auth/token/refresh', {
       method: 'POST',
       headers: {
@@ -30,19 +29,14 @@ async function authFetch(url, options = {}) {
 
     if (refreshRes.ok) {
       const { access_token, refresh_token } = await refreshRes.json();
-
-      // сохраняем новые токены
       localStorage.setItem('access_token', access_token);
       localStorage.setItem('refresh_token', refresh_token);
-
-      // повторяем запрос с новым access_token
       res = await doFetch(access_token);
     } else {
-      // refresh тоже просрочен — уходим на login
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       window.location.href = '/login';
-      return; // чтобы дальше не выполнялось
+      return;
     }
   }
 
@@ -53,30 +47,71 @@ function Friends() {
   const [activeTab, setActiveTab] = useState('search');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [incomingRequests, setIncomingRequests] = useState([]);
   const [outgoingRequests, setOutgoingRequests] = useState([]);
   const navigate = useNavigate();
 
-  // Поиск пользователей
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
+  const fetchUsers = async (page = 0, query = '') => {
     try {
-      const res = await authFetch(
-        `http://localhost:8081/api/users/search?query=${encodeURIComponent(searchQuery)}`
-      );
+      const url = query
+        ? `http://localhost:8081/api/users/search?query=${encodeURIComponent(query)}&page=${page}`
+        : `http://localhost:8081/api/users?page=${page}`;
+  
+      const res = await authFetch(url);
       if (res.ok) {
         const data = await res.json();
-        setSearchResults(data);
+  
+        // Получаем текущего пользователя из localStorage
+        const currentUserId = localStorage.getItem('user_id');
+  
+        let usersList = [];
+        let currentPageNumber = 0;
+        let totalPagesCount = 0;
+  
+        if (data.content) {
+          // фильтруем текущего пользователя
+          usersList = data.content.filter(user => user.id.toString() !== currentUserId);
+          currentPageNumber = data.number;
+          totalPagesCount = Math.ceil(data.totalElements / data.size);
+        } else {
+          usersList = Array.isArray(data) ? data : [];
+          currentPageNumber = 0;
+          totalPagesCount = 1;
+        }
+  
+        setSearchResults(usersList);
+        setCurrentPage(currentPageNumber);
+        setTotalPages(totalPagesCount);
+  
       } else {
         setSearchResults([]);
+        setCurrentPage(0);
+        setTotalPages(0);
       }
     } catch (err) {
-      console.error('Ошибка при поиске:', err);
+      console.error('Ошибка при загрузке пользователей:', err);
       if (err.message.includes('Сессия истекла')) navigate('/login');
     }
   };
+  
 
-  // Загрузить входящие заявки
+  const handleSearch = () => {
+    fetchUsers(0, searchQuery.trim());
+  };
+
+  const handlePageChange = (newPage) => {
+    fetchUsers(newPage, searchQuery.trim());
+  };
+
+  // эффект для сброса поиска при очистке поля
+  useEffect(() => {
+    if (searchQuery === '') {
+      fetchUsers(0);
+    }
+  }, [searchQuery]);
+
   const fetchIncomingRequests = async () => {
     try {
       const res = await authFetch('http://localhost:8081/api/friends/requests/incoming');
@@ -90,7 +125,6 @@ function Friends() {
     }
   };
 
-  // Загрузить исходящие заявки
   const fetchOutgoingRequests = async () => {
     try {
       const res = await authFetch('http://localhost:8081/api/friends/requests/outgoing');
@@ -105,20 +139,16 @@ function Friends() {
   };
 
   useEffect(() => {
+    if (activeTab === 'search') fetchUsers(0);
     if (activeTab === 'incoming') fetchIncomingRequests();
     if (activeTab === 'outgoing') fetchOutgoingRequests();
   }, [activeTab]);
 
   const handleSendRequest = async (id) => {
     try {
-      const response = await authFetch(`http://localhost:8081/api/friends/request/${id}`, {
-        method: 'POST',
-      });
-      if (response.ok) {
-        alert('Заявка отправлена');
-      } else {
-        alert('Ошибка при отправке заявки');
-      }
+      const response = await authFetch(`http://localhost:8081/api/friends/request/${id}`, { method: 'POST' });
+      if (response.ok) alert('Заявка отправлена');
+      else alert('Ошибка при отправке заявки');
     } catch (err) {
       console.error('Ошибка при отправке заявки:', err);
       if (err.message.includes('Сессия истекла')) navigate('/login');
@@ -128,15 +158,11 @@ function Friends() {
 
   const handleAccept = async (id) => {
     try {
-      const response = await authFetch(`http://localhost:8081/api/friends/accept/${id}`, {
-        method: 'POST',
-      });
+      const response = await authFetch(`http://localhost:8081/api/friends/accept/${id}`, { method: 'POST' });
       if (response.ok) {
         fetchIncomingRequests();
         alert('Заявка принята');
-      } else {
-        alert('Ошибка при принятии заявки');
-      }
+      } else alert('Ошибка при принятии заявки');
     } catch (err) {
       console.error('Ошибка при принятии заявки:', err);
       if (err.message.includes('Сессия истекла')) navigate('/login');
@@ -146,15 +172,11 @@ function Friends() {
 
   const handleDecline = async (id) => {
     try {
-      const response = await authFetch(`http://localhost:8081/api/friends/decline/${id}`, {
-        method: 'POST',
-      });
+      const response = await authFetch(`http://localhost:8081/api/friends/decline/${id}`, { method: 'POST' });
       if (response.ok) {
         fetchIncomingRequests();
         alert('Заявка отклонена');
-      } else {
-        alert('Ошибка при отклонении заявки');
-      }
+      } else alert('Ошибка при отклонении заявки');
     } catch (err) {
       console.error('Ошибка при отклонении заявки:', err);
       if (err.message.includes('Сессия истекла')) navigate('/login');
@@ -180,24 +202,9 @@ function Friends() {
     <div className="friends-page">
       <h2>Друзья</h2>
       <div className="tabs">
-        <button
-          className={activeTab === 'search' ? 'active' : ''}
-          onClick={() => setActiveTab('search')}
-        >
-          Найти друзей
-        </button>
-        <button
-          className={activeTab === 'incoming' ? 'active' : ''}
-          onClick={() => setActiveTab('incoming')}
-        >
-          Входящие заявки
-        </button>
-        <button
-          className={activeTab === 'outgoing' ? 'active' : ''}
-          onClick={() => setActiveTab('outgoing')}
-        >
-          Исходящие заявки
-        </button>
+        <button className={activeTab === 'search' ? 'active' : ''} onClick={() => setActiveTab('search')}>Найти друзей</button>
+        <button className={activeTab === 'incoming' ? 'active' : ''} onClick={() => setActiveTab('incoming')}>Входящие заявки</button>
+        <button className={activeTab === 'outgoing' ? 'active' : ''} onClick={() => setActiveTab('outgoing')}>Исходящие заявки</button>
       </div>
 
       <div className="tab-content">
@@ -213,16 +220,16 @@ function Friends() {
               <button onClick={handleSearch}>Найти</button>
             </div>
             {renderUserList(searchResults, (user) => (
-              <button
-                className="friend-action-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleSendRequest(user.id);
-                }}
-              >
-                Отправить запрос
-              </button>
+              <button className="friend-action-btn" onClick={(e) => { e.stopPropagation(); handleSendRequest(user.id); }}>Отправить запрос</button>
             ))}
+
+            {totalPages > 1 && (
+              <div className="pagination">
+                <button disabled={currentPage === 0} onClick={() => handlePageChange(currentPage - 1)}>Назад</button>
+                <span>{currentPage + 1} / {totalPages}</span>
+                <button disabled={currentPage + 1 >= totalPages} onClick={() => handlePageChange(currentPage + 1)}>Вперед</button>
+              </div>
+            )}
           </>
         )}
 
@@ -230,30 +237,12 @@ function Friends() {
           <>
             {incomingRequests.length === 0 ? (
               <p>Нет входящих заявок</p>
-            ) : (
-              renderUserList(incomingRequests, (user) => (
-                <>
-                  <button
-                    className="friend-action-btn accept"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleAccept(user.id);
-                    }}
-                  >
-                    Принять
-                  </button>
-                  <button
-                    className="friend-action-btn decline"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDecline(user.id);
-                    }}
-                  >
-                    Отклонить
-                  </button>
-                </>
-              ))
-            )}
+            ) : renderUserList(incomingRequests, (user) => (
+              <>
+                <button className="friend-action-btn accept" onClick={(e) => { e.stopPropagation(); handleAccept(user.id); }}>Принять</button>
+                <button className="friend-action-btn decline" onClick={(e) => { e.stopPropagation(); handleDecline(user.id); }}>Отклонить</button>
+              </>
+            ))}
           </>
         )}
 
@@ -261,9 +250,7 @@ function Friends() {
           <>
             {outgoingRequests.length === 0 ? (
               <p>Нет исходящих заявок</p>
-            ) : (
-              renderUserList(outgoingRequests, () => null)
-            )}
+            ) : renderUserList(outgoingRequests, () => null)}
           </>
         )}
       </div>

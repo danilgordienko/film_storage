@@ -48,4 +48,6 @@ public interface UserMapping {
         }
         return  page.getContent().stream().map(this::toUserListDto).toList();
     }
+
+    UserSettingsDto toUserSettingDto(User user);
 }
