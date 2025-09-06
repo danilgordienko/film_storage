@@ -1,7 +1,7 @@
 <configuration>
 
     <!-- Настройки конвертера JSON -->
-    <include resource="net/logstash/logback/logback-base.xml"/>
+<!--    <include resource="net/logstash/logback/logback-base.xml"/>-->
 
     <!-- Настраиваем Appender для RabbitMQ -->
     <appender name="RABBIT" class="org.springframework.amqp.rabbit.logback.AmqpAppender">
@@ -27,7 +27,7 @@
         </encoder>
 
         <!-- Настройки подключения к RabbitMQ -->
-        <host>localhost</host>
+        <host>rabbitmq</host>
         <port>5672</port>
         <username>guest</username>
         <password>guest</password>

@@ -64,7 +64,7 @@ public class AuthServiceImpl implements AuthService {
     // аунтификация пользователя по учетным данным
     @Transactional
     public AuthResponse login(UserLoginDto loginRequest) {
-        log.info("Attempting login for user: {}", loginRequest.getUsername());
+        log.debug("Attempting login for user: {}", loginRequest.getUsername());
         // аунтфицируем по логину и паролю
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -88,7 +88,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public AuthResponse register(UserRegistrationDTO registerRequest) {
         try {
-            log.info("Registering new user: {}", registerRequest.getUsername());
+            log.debug("Registering new user: {}", registerRequest.getUsername());
             User user = User.builder()
                     .email(registerRequest.getEmail())
                     .username(registerRequest.getUsername())
@@ -119,7 +119,7 @@ public class AuthServiceImpl implements AuthService {
     // получение нового access токена
     @Override
     public AuthResponse refresh(String header) {
-        log.info("Attempting to refresh access token using refresh token");
+        log.debug("Attempting to refresh access token using refresh token");
         String refreshToken = jwtService.getTokenFromHeader(header);
 
         // Извлекаем имя пользователя из токена
@@ -142,13 +142,13 @@ public class AuthServiceImpl implements AuthService {
     // отзыв refresh токена
     @Transactional
     public void logout(String header) {
-        log.info("Attempting logout with refresh token");
+        log.debug("Attempting logout with refresh token");
         String refreshToken = jwtService.getTokenFromHeader(header);
 
         jwtService.validateRefreshToken(refreshToken);
 
         jwtService.revokeRefreshToken(refreshToken);
-        log.info("Tokens revoked");
+        log.debug("Tokens revoked");
     }
 
     // получение пользователя по логину

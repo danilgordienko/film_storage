@@ -27,7 +27,7 @@
         </encoder>
 
         <!-- Настройки подключения к RabbitMQ -->
-        <host>localhost</host>
+        <host>rabbitmq</host>
         <port>5672</port>
         <username>guest</username>
         <password>guest</password>
