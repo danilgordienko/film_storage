@@ -1,0 +1,51 @@
+version: "3.9"
+
+services:
+  postgres15:
+    image: postgres:15
+    container_name: postgres15
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - film_network
+
+  film_fetcher:
+    build:
+      context: .
+    container_name: film_fetcher
+    environment:
+      APP_KEY: ${API_KEY}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_HOST: ${DB_HOST}
+      PROXY_HOST: ${PROXY_HOST}
+      PROXY_PORT: ${PROXY_PORT}
+      PROXY_USERNAME: ${PROXY_USERNAME}
+      PROXY_PASSWORD: ${PROXY_PASSWORD}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: ${RABBITMQ_PORT}
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      SERVICE_PORT: ${SERVICE_PORT}
+    depends_on:
+      - postgres15
+    ports:
+      - "8082:8082"
+    networks:
+      - film_network
+
+volumes:
+  postgres_data:
+
+networks:
+  film_network:
+    external: true
+

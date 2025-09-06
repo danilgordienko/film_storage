@@ -1,0 +1,61 @@
+version: "3.9"
+
+services:
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - film_network
+
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - film_network
+
+  film_storage:
+    build:
+      context: .
+    container_name: film_storage
+    environment:
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_HOST: postgres
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: ${RABBITMQ_PORT}
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      SERVICE_PORT: ${SERVICE_PORT}
+      APP_SECURITY_SECRET: ${APP_SECURITY_SECRET}
+      APP_SECURITY_REFRESH_EXPIRATION: ${APP_SECURITY_REFRESH_EXPIRATION}
+      APP_SECURITY_ACCESS_EXPIRATION: ${APP_SECURITY_ACCESS_EXPIRATION}
+      ES_HOST: elasticsearch
+      ES_PORT: ${ES_PORT}
+      LOGSTASH_PORT: ${LOGSTASH_PORT}
+      REDIS_HOST: redis
+      REDIS_PORT: ${REDIS_PORT}
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - "8081:8081"
+    networks:
+      - film_network
+volumes:
+  postgres_data:
+
+networks:
+  film_network:
+    external: true

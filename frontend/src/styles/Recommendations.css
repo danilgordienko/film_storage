@@ -1,0 +1,78 @@
+/* Recommendations.css */
+.recommendations-container {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 0 16px;
+  }
+  
+  .recommendations-container h2 {
+    text-align: center;
+    margin-bottom: 24px;
+    font-size: 32px;
+    color: #333;
+  }
+  
+  .recommendations-tabs {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 24px;
+    gap: 12px;
+  }
+  
+  .recommendations-tabs button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #f1f1f1;
+    border: none;
+    color: #333;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  
+  .recommendations-tabs button.active {
+    background-color: #007bff;
+    color: white;
+  }
+  
+  .recommendations-tabs button:hover {
+    background-color: #ddd;
+  }
+  
+  .recommendation-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+  }
+  
+  .recommendation-card {
+    display: flex;
+    flex-direction: column;
+    background-color: #f8f8f8;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s;
+    height: 100%;
+  }
+  
+  .recommendation-card:hover {
+    transform: scale(1.01);
+  }
+  
+  .recommendation-header {
+    padding: 12px 16px;
+    background-color: #e9f5ff;
+    border-bottom: 1px solid #d0e8ff;
+  }
+  
+  .recommendation-header p {
+    margin: 0;
+    font-size: 14px;
+    color: #555;
+  }
+  
+  .recommendation-header strong {
+    color: #007bff;
+  }
+  

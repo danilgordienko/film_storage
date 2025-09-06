@@ -1,0 +1,160 @@
+.friends-page {
+  max-width: 900px;
+  margin: 20px auto;
+  padding: 0 16px 40px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+}
+
+h2 {
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+.tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.tabs button {
+  padding: 10px 20px;
+  background-color: #eee;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  color: #555;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.tabs button:hover {
+  background-color: #ddd;
+}
+
+.tabs button.active {
+  background-color: #007bff;
+  color: white;
+}
+
+.search-container {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.search-container input[type="text"] {
+  flex-grow: 1;
+  padding: 10px 14px;
+  font-size: 16px;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  outline-offset: 2px;
+  transition: border-color 0.3s;
+}
+
+.search-container input[type="text"]:focus {
+  border-color: #007bff;
+}
+
+.search-container button {
+  padding: 10px 18px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s;
+}
+
+.search-container button:hover {
+  background-color: #0056b3;
+}
+
+.friends-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.friend-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.friend-item:hover {
+  background-color: #f5faff;
+}
+
+.friend-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-grow: 1;
+}
+
+.friend-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #bbb; /* Пока заглушка, можно заменить на img */
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.friend-info span {
+  font-size: 16px;
+  font-weight: 500;
+  color: #222;
+}
+
+.friend-actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.friend-action-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  background-color: #007bff;
+  color: white;
+  transition: background-color 0.3s;
+}
+
+.friend-action-btn:hover {
+  background-color: #0056b3;
+}
+
+.friend-action-btn.accept {
+  background-color: #28a745;
+}
+
+.friend-action-btn.accept:hover {
+  background-color: #1e7e34;
+}
+
+.friend-action-btn.decline {
+  background-color: #dc3545;
+}
+
+.friend-action-btn.decline:hover {
+  background-color: #a71d2a;
+}
+
+/* Сообщения когда нет заявок */
+.tab-content p {
+  font-style: italic;
+  color: #666;
+  margin-top: 16px;
+}

@@ -1,3 +1,5 @@
+backend\film_storage\.gitignore
+@@ -1,47 +0,0 @@
 # Игнорировать файлы, специфичные для IDE
 .idea/
 *.iml
@@ -6,8 +8,6 @@
 .vscode/
 *.swp
 *.swo
-.env
-
 
 # Игнорировать скомпилированные файлы
 /target/
@@ -44,6 +44,3 @@
 /.nyc_output/
 
 /logs/
-
-
-
