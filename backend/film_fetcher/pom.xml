@@ -90,11 +90,11 @@
 			<version>1.6.2</version>
 			<scope>provided</scope>
 		</dependency>
-		<dependency>
-			<groupId>io.github.cdimascio</groupId>
-			<artifactId>dotenv-java</artifactId>
-			<version>3.0.0</version>
-		</dependency>
+<!--		<dependency>-->
+<!--			<groupId>io.github.cdimascio</groupId>-->
+<!--			<artifactId>dotenv-java</artifactId>-->
+<!--			<version>3.0.0</version>-->
+<!--		</dependency>-->
 		<dependency>
 			<groupId>net.logstash.logback</groupId>
 			<artifactId>logstash-logback-encoder</artifactId>

@@ -48,7 +48,7 @@
     <!-- Настройка уровней логирования -->
     <root level="INFO">
         <appender-ref ref="STDOUT"/>
-<!--        <appender-ref ref="RABBIT"/>-->
+        <appender-ref ref="RABBIT"/>
     </root>
 
 </configuration>

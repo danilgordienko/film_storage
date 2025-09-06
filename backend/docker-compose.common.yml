@@ -1,0 +1,65 @@
+version: "3.9"
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:cd 
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    networks:
+      - film_network
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.14.3
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - film_network
+      
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.14.3
+    container_name: logstash
+    depends_on:
+      - rabbitmq
+      - elasticsearch
+    ports:
+      - "${LOGSTASH_PORT}:5044"
+    environment:
+      RABBIT_HOST: ${RABBITMQ_HOST}
+      RABBIT_PORT: ${RABBITMQ_PORT}
+      RABBIT_USER: ${RABBITMQ_USERNAME}
+      RABBIT_PASSWORD: ${RABBITMQ_PASSWORD}
+      ELASTIC_HOST: ${ES_HOST}
+      ELASTIC_PORT: ${ES_PORT}
+    volumes:
+      - ./film_storage/src/main/resources/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+      - ./film_storage/src/main/resources/logstash/pipeline:/usr/share/logstash/pipeline:ro
+    networks:
+      - film_network
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.14.3
+    container_name: kibana
+    depends_on:
+      - elasticsearch
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    networks:
+      - film_network
+
+networks:
+  film_network:
+    external: true
