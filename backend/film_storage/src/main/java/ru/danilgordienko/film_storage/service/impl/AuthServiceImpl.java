@@ -19,6 +19,7 @@ import ru.danilgordienko.film_storage.model.dto.UsersDto.UserLoginDto;
 import ru.danilgordienko.film_storage.model.dto.UsersDto.UserRegistrationDTO;
 import ru.danilgordienko.film_storage.model.dto.mapping.UserMapping;
 import ru.danilgordienko.film_storage.exception.*;
+import ru.danilgordienko.film_storage.model.enums.RatingVisibility;
 import ru.danilgordienko.film_storage.model.enums.Role;
 import ru.danilgordienko.film_storage.model.entity.User;
 import ru.danilgordienko.film_storage.repository.UserRepository;
@@ -42,23 +43,6 @@ public class AuthServiceImpl implements AuthService {
     private final UserSearchRepository  userSearchRepository;
     private final UserMapping userMapping;
     private final JWTCore jwtService;
-
-
-    // регисрация админа по умолчанию(временно)
-    @PostConstruct
-    public void initAdmin() {
-        String defaultAdminLogin = "admin";
-        boolean adminExists = userRepository.existsByUsername(defaultAdminLogin);
-        if (!adminExists) {
-            User admin = User.builder()
-                    .username(defaultAdminLogin)
-                    .email("admin@example.com")
-                    .password(passwordEncoder.encode("admin123"))
-                    .roles(Set.of(Role.ADMIN.name()))
-                    .build();
-            userRepository.save(admin);
-        }
-    }
 
 
     // аунтификация пользователя по учетным данным

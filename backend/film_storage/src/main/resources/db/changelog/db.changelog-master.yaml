@@ -3,3 +3,7 @@ databaseChangeLog:
       file: db/changelog/001-init.sql
   - include:
       file: db/changelog/010-add-visibility-to-users-ratings.sql
+  - include:
+      file: db/changelog/011-init-admin.sql
+  - include:
+      file: db/changelog/020-update-refresh-and-access-token-length.sql
