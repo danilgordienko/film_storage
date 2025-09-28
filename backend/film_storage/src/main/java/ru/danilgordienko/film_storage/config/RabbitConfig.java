@@ -16,13 +16,16 @@ public class RabbitConfig {
     public static final String POSTER_QUEUE = "movies.poster.queue";
     public static final String MOVIES_PAGE_QUEUE = "movies.page.queue";
     public static final String MOVIES_GENRE_QUEUE = "movies.genre.queue";
+    public static final String NOTIFICATION_QUEUE = "notification.queue";
 
-    public static final String EXCHANGE = "movies.exchange";
+    public static final String EXCHANGE = "common.exchange";
+    //public static final String NOTIFICATION_EXCHANGE = "notification.exchange";
 
     public static final String ROUTING_KEY = "movies.key";
     public static final String ROUTING_KEY_POSTER = "movies.poster.key";
     public static final String ROUTING_KEY_PAGE = "movies.page.key";
     public static final String ROUTING_KEY_GENRE = "movies.genre.key";
+    public static final String ROUTING_KEY_NOTIFICATION = "notification.key";
 
     @Bean
     public Queue queue() {
@@ -42,6 +45,11 @@ public class RabbitConfig {
     @Bean
     public Queue moviesPageQueue() {
         return new Queue(MOVIES_PAGE_QUEUE, false);
+    }
+
+    @Bean
+    public Queue notificationQueue() {
+        return new Queue(NOTIFICATION_QUEUE, false);
     }
 
     @Bean
@@ -67,6 +75,11 @@ public class RabbitConfig {
     @Bean
     public Binding binding(Queue queue, DirectExchange exchange) {
         return BindingBuilder.bind(queue).to(exchange).with(ROUTING_KEY);
+    }
+
+    @Bean
+    public Binding notificationBinding(DirectExchange exchange) {
+        return BindingBuilder.bind(notificationQueue()).to(exchange).with(ROUTING_KEY_NOTIFICATION);
     }
 
     @Bean

@@ -13,6 +13,8 @@ import ru.danilgordienko.film_storage.model.dto.MoviesDto.MovieDto;
 import ru.danilgordienko.film_storage.config.RabbitConfig;
 import ru.danilgordienko.film_storage.model.entity.Genre;
 import ru.danilgordienko.film_storage.model.entity.Movie;
+import ru.danilgordienko.film_storage.service.BrokerClient;
+import ru.danilgordienko.film_storage.service.impl.RabbitBrokerClient;
 
 import java.util.Arrays;
 import java.util.List;
@@ -26,28 +28,11 @@ public class MovieApiClient {
     private final RabbitTemplate rabbitTemplate;
     private final ApplicationEventPublisher eventPublisher;
     private final RestTemplate restTemplate;
-    private final int size = 20;
-
-    private Optional<Object> getRabbitResponse(String exchange, String routingKey, Object body) {
-        log.debug("Request to RabbitMQ with body: {}", body.toString());
-        try {
-            return Optional.ofNullable(rabbitTemplate.convertSendAndReceive(
-                    exchange,
-                    routingKey,
-                    body
-            ));
-        } catch (AmqpException e) {
-            log.error("Error while working with RabbitMQ: {}", e.getMessage(), e);
-            return Optional.empty();
-        } catch (Exception e) {
-            log.error("Unexpected error: {}", e.getMessage(), e);
-            return Optional.empty();
-        }
-    }
+    private final BrokerClient brokerClient;
 
     public byte[] getPoster(Movie movie) {
         log.debug("Getting poster for movie with id: {}", movie.getId());
-        var response = getRabbitResponse(
+        var response = brokerClient.getResponse(
                 RabbitConfig.EXCHANGE,
                 RabbitConfig.ROUTING_KEY_POSTER,
                 movie.getPoster()
@@ -68,30 +53,6 @@ public class MovieApiClient {
         }
         return Arrays.stream(responseArray).toList();
     }
-
-//    public List<MovieDto> getPopularMoviesPage(int page){
-//        log.debug("Getting popular movies page {}", page);
-//        var response = getRabbitResponse(
-//                RabbitConfig.EXCHANGE,
-//                RabbitConfig.ROUTING_KEY_PAGE,
-//                page
-//        );
-//
-//        if (response.isEmpty()) {
-//            log.warn("No response received from movie service");
-//            return List.of();
-//        }
-//
-//        List<MovieDto> movies;
-//        try {
-//            movies = (List<MovieDto>) response.get();
-//        } catch (ClassCastException e) {
-//            log.error("Type casting error: {}", e.getMessage());
-//            return List.of();
-//        }
-//        log.debug("Received popular movies page {}", page);
-//        return movies;
-//    }
 
     public List<MovieDto> getPopularMoviesPage(int page){
         log.debug("Getting popular movies page {}", page);

@@ -3,6 +3,7 @@ package ru.danilgordienko.notification_service.model.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.ColumnTransformer;
@@ -14,6 +15,7 @@ import java.time.Instant;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Notification {
 
     @Id
@@ -30,10 +32,20 @@ public class Notification {
     @Column(name = "is_read",  nullable = false)
     private Boolean isRead;
 
-    @Column(columnDefinition = "jsonb")
-    @ColumnTransformer(write = "?::jsonb")
-    private String payload;
+//    @Column(columnDefinition = "jsonb")
+//    @ColumnTransformer(write = "?::jsonb")
+//    private String payload;
+
+    @Column(nullable = false)
+    private String sender;
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
+
+    @PrePersist
+    public void prePersist() {
+        if (createdAt == null) {
+            createdAt = Instant.now();
+        }
+    }
 }

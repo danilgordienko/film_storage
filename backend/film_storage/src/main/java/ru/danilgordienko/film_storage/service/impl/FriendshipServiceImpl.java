@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
+import ru.danilgordienko.film_storage.model.dto.NotificationDto;
 import ru.danilgordienko.film_storage.model.dto.UsersDto.UserFriendsDto;
 import ru.danilgordienko.film_storage.model.dto.UsersDto.UserListDto;
 import ru.danilgordienko.film_storage.model.dto.mapping.UserMapping;
@@ -14,8 +15,10 @@ import ru.danilgordienko.film_storage.exception.FriendshipAlreadyExistsException
 import ru.danilgordienko.film_storage.exception.FriendshipNotFoundException;
 import ru.danilgordienko.film_storage.model.entity.FriendRequest;
 import ru.danilgordienko.film_storage.model.entity.User;
+import ru.danilgordienko.film_storage.model.enums.Type;
 import ru.danilgordienko.film_storage.repository.FriendRequestRepository;
 import ru.danilgordienko.film_storage.service.FriendshipService;
+import ru.danilgordienko.film_storage.service.NotificationSender;
 import ru.danilgordienko.film_storage.service.UserService;
 
 import java.util.List;
@@ -29,6 +32,7 @@ public class FriendshipServiceImpl implements FriendshipService {
     private final UserMapping userMapping;
     private final FriendRequestRepository friendRequestRepository;
     private final UserService userService;
+    private final NotificationSender  notificationSender;
 
     // Get friends of the current user
     public UserFriendsDto getCurrentUserFriends(String username) {
@@ -65,6 +69,8 @@ public class FriendshipServiceImpl implements FriendshipService {
                     .sender(sender)
                     .receiver(receiver)
                     .build());
+
+            notificationSender.send(new NotificationDto(username, targetId, Type.FRIEND_REQUEST));
             log.debug("Friend request successfully sent from '{}' to user ID '{}'", username, targetId);
         } catch (DataAccessException e) {
             log.error("Database access error while sending friend request", e);
@@ -94,6 +100,9 @@ public class FriendshipServiceImpl implements FriendshipService {
             receiver.getFriends().add(sender);
             userService.saveUser(sender);
             userService.saveUser(receiver);
+
+            notificationSender.send(new NotificationDto(
+                    receiver.getUsername(), sender.getId(), Type.ACCEPT_FRIEND_REQUEST));
             log.debug("Friend request accepted between '{}' and '{}'", username, receiver.getUsername());
         } catch (DataAccessException e) {
             log.error("Database access error while accepting friend request", e);
@@ -117,6 +126,9 @@ public class FriendshipServiceImpl implements FriendshipService {
 
             // Remove request
             friendRequestRepository.delete(request.get());
+
+            notificationSender.send(new NotificationDto(
+                    receiver.getUsername(), sender.getId(), Type.DECLINE_FRIEND_REQUEST));
             log.debug("Friend request declined from '{}' to '{}'", receiver.getUsername(), username);
         } catch (DataAccessException e) {
             log.error("Database access error while declining friend request", e);
