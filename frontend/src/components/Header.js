@@ -1,10 +1,70 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation, NavLink } from 'react-router-dom';
+import SockJS from 'sockjs-client';
+import { Client } from '@stomp/stompjs';
 import '../styles/Header.css';
 
 const Header = ({ userAvatarUrl }) => {
   const location = useLocation();
   const hideOnPaths = ['/login', '/register'];
+  const [notificationCount, setNotificationCount] = useState(0);
+  const [notifications, setNotifications] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [stompClient, setStompClient] = useState(null);
+
+  const userId = localStorage.getItem('user_id');
+
+  // Получение инфо о количестве уведомлений при загрузке
+  useEffect(() => {
+    if (!userId) return;
+
+    fetch(`http://localhost:8083/api/notifications/info?id=${userId}`)
+      .then(res => res.json())
+      .then(data => setNotificationCount(data.count))
+      .catch(err => console.error('Failed to fetch notifications info', err));
+  }, [userId]);
+
+  // Подключение к WebSocket
+  useEffect(() => {
+    if (!userId) return;
+
+    const client = new Client({
+      webSocketFactory: () => new SockJS("http://localhost:8083/ws"),
+      reconnectDelay: 5000,
+      onConnect: () => {
+        console.log("Connected to WebSocket");
+        client.subscribe(`/topic/notifications/${userId}`, (message) => {
+          console.log("📩 New message:", message);
+          if (message.body) {
+            setNotificationCount(prev => prev + 1);
+          }
+        });
+      },
+    });
+
+    client.activate();
+    setStompClient(client);
+
+    return () => {
+      client.deactivate();
+    };
+  }, [userId]);
+
+  // Получение всех уведомлений при клике на колокольчик
+  const handleNotificationsClick = () => {
+    if (!userId) return;
+  
+    fetch(`http://localhost:8083/api/notifications?id=${userId}`)
+      .then(res => res.json())
+      .then(data => {
+        console.log('Fetched notifications:', data); // <-- проверяем структуру
+        setNotifications(data.notifications || []);
+        setShowDropdown(prev => !prev);
+      })
+      
+      .catch(err => console.error('Failed to fetch notifications', err));
+  };
+  
 
   if (hideOnPaths.includes(location.pathname)) return null;
 
@@ -26,6 +86,37 @@ const Header = ({ userAvatarUrl }) => {
       </nav>
 
       <nav className="nav-right">
+      <div
+        className="notification-wrapper"
+        onClick={handleNotificationsClick}
+        role="button"
+        tabIndex={0}
+        onKeyPress={(e) => { if(e.key === 'Enter') handleNotificationsClick(); }}
+      >
+        <span className="notification-icon">🔔</span>
+        {notificationCount > 0 && (
+          <span className="notification-badge">{notificationCount}</span>
+        )}
+       {showDropdown && (
+        <div className="notification-dropdown">
+          {notifications.length > 0 ? (
+            notifications.map((notif, idx) => (
+              <div key={idx} className="notification-item">
+                <span className="notification-sender">{notif.sender}</span>
+                {notif.message && <span className="notification-message">{notif.message}</span>}
+                <span className="notification-date">{new Date(notif.createdAt).toLocaleString()}</span>
+              </div>
+            ))
+          ) : (
+            <div className="notification-item">Нет уведомлений</div>
+          )}
+        </div>
+      )}
+
+
+      </div>
+
+
         <NavLink to="/profile/me" className={({ isActive }) => isActive ? 'nav-link active profile-link' : 'nav-link profile-link'}>
           Профиль
         </NavLink>
@@ -44,7 +135,6 @@ const Header = ({ userAvatarUrl }) => {
             <div className="avatar"></div>
           )}
         </NavLink>
-
       </nav>
     </header>
   );
