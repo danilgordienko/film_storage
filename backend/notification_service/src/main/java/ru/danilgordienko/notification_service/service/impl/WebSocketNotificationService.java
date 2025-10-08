@@ -10,7 +10,9 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import ru.danilgordienko.notification_service.config.RabbitConfig;
 import ru.danilgordienko.notification_service.model.dto.request.NotificationRequestDto;
+import ru.danilgordienko.notification_service.model.dto.response.NotificationListResponseDto;
 import ru.danilgordienko.notification_service.model.dto.response.NotificationResponseDto;
+import ru.danilgordienko.notification_service.model.dto.response.NotificationsInfoDto;
 import ru.danilgordienko.notification_service.model.entity.Notification;
 import ru.danilgordienko.notification_service.model.events.NotificationReceivedEvent;
 import ru.danilgordienko.notification_service.model.mapping.NotificationMapping;
@@ -18,6 +20,8 @@ import ru.danilgordienko.notification_service.repository.NotificationRepository;
 import ru.danilgordienko.notification_service.service.NotificationMessageResolver;
 import ru.danilgordienko.notification_service.service.NotificationSender;
 import ru.danilgordienko.notification_service.service.NotificationService;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -34,17 +38,34 @@ public class WebSocketNotificationService implements NotificationService {
     @Transactional
     public void acceptNotification(NotificationRequestDto notification) {
         Notification notificationEntity = notificationMapping.toNotification(notification);
-        //notificationRepository.save(notificationEntity);
+        var saved = notificationRepository.save(notificationEntity);
+        log.debug("Notification saved: {}", saved.getId());
         applicationEventPublisher.publishEvent(
                 new NotificationReceivedEvent(this, notificationEntity)
         );
-        log.info("Received notification request: {}", notification);
+    }
+
+    @Override
+    public NotificationListResponseDto getAllNotifications(Long id) {
+        var notifications = findAllByUserId(id);
+        return notificationMapping.toNotificationListResponseDto(notifications);
+    }
+
+    @Override
+    public NotificationsInfoDto getNotificationsInfo(Long id) {
+        var notifications = notificationRepository.findAllByUserIdAndIsRead(id, false);
+        return notificationMapping.toNotificationsInfoDto(notifications);
+    }
+
+    private List<Notification> findAllByUserId(Long id) {
+        return notificationRepository.findAllByUserId(id);
     }
 
 
     @EventListener
     @Async
     public void sendNotification(NotificationReceivedEvent event) {
+        log.debug("Notification received: {}", event.getNotification().getId());
         String message = notificationMessageResolver.getMessage(event.getNotification());
         log.info(message);
         NotificationResponseDto response = notificationMapping.toNotificationResponseDto(

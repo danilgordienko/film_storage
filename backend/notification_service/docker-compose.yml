@@ -1,0 +1,49 @@
+version: "3.9"
+
+services:
+  postgres3:
+    image: postgres:15
+    container_name: postgres3
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - film_network
+
+  notification_service:
+    build:
+      context: .
+    container_name: notification_service
+    environment:
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_HOST: postgres3
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: ${RABBITMQ_PORT}
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      SERVICE_PORT: ${SERVICE_PORT}
+      ES_HOST: elasticsearch
+      ES_PORT: ${ES_PORT}
+      LOGSTASH_PORT: ${LOGSTASH_PORT}
+      REDIS_HOST: redis
+      REDIS_PORT: ${REDIS_PORT}
+    depends_on:
+      - postgres3
+    ports:
+      - "8083:8083"
+    networks:
+      - film_network
+volumes:
+  postgres_data:
+
+networks:
+  film_network:
+    external: true

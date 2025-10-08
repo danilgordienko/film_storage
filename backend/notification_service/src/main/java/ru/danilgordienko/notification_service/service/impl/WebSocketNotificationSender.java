@@ -21,6 +21,6 @@ public class WebSocketNotificationSender implements NotificationSender {
                 "/topic/notifications/" + userId,
                 notification
         );
-        log.info("Notification sent to user {}", userId);
+        log.info("Notification {} sent to user {}",notification.getId(), userId);
     }
 }
