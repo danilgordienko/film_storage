@@ -22,4 +22,5 @@ public interface MovieService {
     void populateMovies(MovieApiClient.MoviesReceivedEvent event);
     void deleteMovie(Long id);
     void addMovie(Long id);
+    MovieListDto getMovieInfo(Long id);
 }

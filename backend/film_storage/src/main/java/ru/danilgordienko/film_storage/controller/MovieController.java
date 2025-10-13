@@ -69,6 +69,18 @@ public class MovieController {
         return ResponseEntity.ok(movie);
     }
 
+    /**
+     * Получение краткой информации фильма по id
+     * @param id
+     */
+    @GetMapping("/{id}/info")
+    public ResponseEntity<MovieListDto> getMovieInfo(@PathVariable Long id){
+        log.info("GET /api/movies/{} - Fetching movie info", id);
+        MovieListDto movie = movieService.getMovieInfo(id);
+        log.info("GET /api/movies/{} - Successfully fetched movie info", id);
+        return ResponseEntity.ok(movie);
+    }
+
     // получение постера к фильму
     @GetMapping("/{id}/poster")
     public ResponseEntity<byte[]> getMoviePoster(@PathVariable Long id) {

@@ -225,6 +225,12 @@ public class MovieServiceImpl implements MovieService {
         // implementation empty
     }
 
+    @Override
+    public MovieListDto getMovieInfo(Long id) {
+        Movie movie = getMovieById(id);
+        return movieMapping.toMovieListDto(movie);
+    }
+
     private void saveMoviesDB(List<Movie> movies){
         log.debug("Saving movies in database");
         List<Movie> savedMovies = movieRepository.saveAll(movies);
