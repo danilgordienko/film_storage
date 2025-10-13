@@ -1,5 +1,6 @@
 package ru.danilgordienko.film_storage.exception.handler;
 
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.MappingException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -17,6 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(UserNotFoundException.class)
@@ -107,6 +109,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleGeneralException(Exception ex) {
+        log.error("Внутренняя ошибка серверa{}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("Внутренняя ошибка сервера" + ex.getMessage());
     }

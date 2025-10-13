@@ -70,8 +70,8 @@ public class FriendshipServiceImpl implements FriendshipService {
                     .receiver(receiver)
                     .build());
 
-            notificationSender.send(new NotificationDto(username, targetId, Type.FRIEND_REQUEST));
-            log.debug("Friend request successfully sent from '{}' to user ID '{}'", username, targetId);
+            notificationSender.send(new NotificationDto(sender.getUsername(), targetId, Type.FRIEND_REQUEST));
+            log.debug("Friend request successfully sent from '{}' to user ID '{}'", sender.getUsername(), targetId);
         } catch (DataAccessException e) {
             log.error("Database access error while sending friend request", e);
             throw new DatabaseConnectionException("Database connection error", e);

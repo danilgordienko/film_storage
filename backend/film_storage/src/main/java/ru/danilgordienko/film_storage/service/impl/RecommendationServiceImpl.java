@@ -4,6 +4,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.danilgordienko.film_storage.model.dto.NotificationDto;
 import ru.danilgordienko.film_storage.model.dto.RecommendationDto;
 import ru.danilgordienko.film_storage.model.dto.mapping.RecommendationMapping;
 import ru.danilgordienko.film_storage.exception.RecommendationAlreadyExistsException;
@@ -11,8 +12,10 @@ import ru.danilgordienko.film_storage.exception.RecommendationNotFoundException;
 import ru.danilgordienko.film_storage.model.entity.Movie;
 import ru.danilgordienko.film_storage.model.entity.Recommendation;
 import ru.danilgordienko.film_storage.model.entity.User;
+import ru.danilgordienko.film_storage.model.enums.Type;
 import ru.danilgordienko.film_storage.repository.RecommendationRepository;
 import ru.danilgordienko.film_storage.service.MovieService;
+import ru.danilgordienko.film_storage.service.NotificationSender;
 import ru.danilgordienko.film_storage.service.RecommendationService;
 import ru.danilgordienko.film_storage.service.UserService;
 
@@ -27,6 +30,7 @@ public class RecommendationServiceImpl implements RecommendationService {
     private final UserService userService;
     private final MovieService movieService;
     private final RecommendationMapping recommendationMapping;
+    private final NotificationSender notificationSender;
 
     @Transactional
     public void sendRecommendation(String username, Long receiverId, Long movieId) {
@@ -48,6 +52,10 @@ public class RecommendationServiceImpl implements RecommendationService {
                 .build();
 
         recommendationRepository.save(recommendation);
+
+        notificationSender.send(new NotificationDto(
+                sender.getUsername(), receiver.getId(), Type.RECOMMENDATION_REQUEST));
+        log.debug("Friend request declined from '{}' to '{}'", receiver.getUsername(), username);
         log.debug("Recommendation sent by user '{}' for movie '{}' to user '{}'",
                 sender.getUsername(), movie.getTitle(), receiver.getUsername());
     }

@@ -42,4 +42,17 @@ public class NotificationController {
         log.info("GET api/notifications/info - Get notifications info by user id {}", id);
         return  ResponseEntity.ok(response);
     }
+
+    @PostMapping("/read")
+    public ResponseEntity<String> markNotificationsAsRead(
+            @RequestParam Long id
+    ) {
+        log.info("GET api/notifications/read - Request to mark notifications as read by user id {}", id);
+        notificationService.markNotificationsAsRead(id);
+        log.info("GET api/notifications/read - Successfully mark notifications as read by user id {}", id);
+        return  ResponseEntity.ok().build();
+    }
+
+
+
 }

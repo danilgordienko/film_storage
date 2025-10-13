@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 import ru.danilgordienko.notification_service.model.entity.Notification;
+import ru.danilgordienko.notification_service.model.enums.Type;
 import ru.danilgordienko.notification_service.service.NotificationMessageResolver;
 
 import java.util.Locale;
@@ -17,10 +18,10 @@ public class FileNotificationMessageResolver implements NotificationMessageResol
     private final MessageSource messageSource;
 
     @Override
-    public String getMessage(Notification notification) {
+    public String getMessage(String type, String sender) {
         return messageSource.getMessage(
-                "notification." + notification.getType().getValue(),
-                new Object[]{notification.getSender()},
+                "notification." + type.toLowerCase(),
+                new Object[]{sender},
                 Locale.forLanguageTag("ru")
         );
     }

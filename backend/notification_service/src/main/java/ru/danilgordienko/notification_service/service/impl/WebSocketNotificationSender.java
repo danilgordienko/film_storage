@@ -16,11 +16,12 @@ public class WebSocketNotificationSender implements NotificationSender {
 
     private final SimpMessagingTemplate messagingTemplate;
 
+    @Override
     public void sendNotification(Long userId, NotificationResponseDto notification) {
         messagingTemplate.convertAndSend(
                 "/topic/notifications/" + userId,
                 notification
         );
-        log.info("Notification {} sent to user {}",notification.getId(), userId);
+        log.info("Notification {} sent to user {}",notification.getMessage(), userId);
     }
 }

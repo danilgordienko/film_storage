@@ -16,5 +16,6 @@ public class NotificationResponseDto {
     private Boolean isRead;
     private String message;
     private String sender;
+    private String type;
     private Instant createdAt;
 }

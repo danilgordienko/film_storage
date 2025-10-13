@@ -78,6 +78,7 @@ public class AuthServiceImpl implements AuthService {
                     .username(registerRequest.getUsername())
                     .password(passwordEncoder.encode(registerRequest.getPassword())) // кодируем пароль
                     .roles(Set.of(Role.USER.name()))
+                    .ratingVisibility(RatingVisibility.ALL)
                     .build();
             userRepository.save(user);
             userSearchRepository.save(userMapping.toUserDocument(user));

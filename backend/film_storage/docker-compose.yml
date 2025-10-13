@@ -46,6 +46,8 @@ services:
       LOGSTASH_PORT: ${LOGSTASH_PORT}
       REDIS_HOST: redis
       REDIS_PORT: ${REDIS_PORT}
+      FILM_FETCHER_GENRE_URL: ${FILM_FETCHER_GENRE_URL}
+      FILM_FETCHER_MOVIE_URL: ${FILM_FETCHER_MOVIE_URL}
     depends_on:
       - postgres
       - redis

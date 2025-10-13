@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,11 @@ public class MovieApiClient {
     private final ApplicationEventPublisher eventPublisher;
     private final RestTemplate restTemplate;
     private final BrokerClient brokerClient;
+    @Value("${app.filmfetcher.url.genre}")
+    private String filmFetcherGenreUrl;
+    @Value("${app.filmfetcher.url.movie}")
+    private String filmFetcherMovieUrl;
+
 
     public byte[] getPoster(Movie movie) {
         log.debug("Getting poster for movie with id: {}", movie.getId());
@@ -45,8 +51,7 @@ public class MovieApiClient {
 
     public List<Genre> getGenres() {
         log.debug("Getting genres");
-        String url = "http://localhost:8082/api/tmdb/movies/genres";
-        Genre[] responseArray = restTemplate.getForObject(url, Genre[].class);
+        Genre[] responseArray = restTemplate.getForObject(filmFetcherGenreUrl, Genre[].class);
         if (responseArray == null || responseArray.length == 0) {
             log.warn("No response received from movie service");
             return List.of();
@@ -56,7 +61,7 @@ public class MovieApiClient {
 
     public List<MovieDto> getPopularMoviesPage(int page){
         log.debug("Getting popular movies page {}", page);
-        String url = "http://localhost:8082/api/tmdb/movies/popular?page={page}";
+        String url = filmFetcherMovieUrl + "?page={page}";
 
         MovieDto[] responseArray = restTemplate.getForObject(url, MovieDto[].class, page);
         if (responseArray == null || responseArray.length == 0) {

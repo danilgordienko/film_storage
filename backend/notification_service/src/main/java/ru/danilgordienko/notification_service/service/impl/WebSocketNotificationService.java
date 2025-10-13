@@ -48,13 +48,33 @@ public class WebSocketNotificationService implements NotificationService {
     @Override
     public NotificationListResponseDto getAllNotifications(Long id) {
         var notifications = findAllByUserId(id);
-        return notificationMapping.toNotificationListResponseDto(notifications);
+        var mappedNotifications = notificationMapping.toNotificationListResponseDto(notifications);
+        return setMessagesToNotifications(mappedNotifications);
+    }
+
+    private NotificationListResponseDto setMessagesToNotifications(NotificationListResponseDto notificationListResponseDto) {
+        var notifications = notificationListResponseDto.getNotifications().stream().map(notification -> {
+                    String message = notificationMessageResolver.getMessage(notification.getType().toLowerCase(), notification.getSender());
+                    notification.setMessage(message);
+                    return notification;
+                }
+        ).toList();
+        notificationListResponseDto.setNotifications(notifications);
+        return notificationListResponseDto;
     }
 
     @Override
     public NotificationsInfoDto getNotificationsInfo(Long id) {
         var notifications = notificationRepository.findAllByUserIdAndIsRead(id, false);
         return notificationMapping.toNotificationsInfoDto(notifications);
+    }
+
+    @Override
+    @Transactional
+    public void markNotificationsAsRead(Long id) {
+        var notifications = notificationRepository.findAllByUserIdAndIsRead(id, false);
+        notifications.forEach(n -> n.setIsRead(true));
+
     }
 
     private List<Notification> findAllByUserId(Long id) {
@@ -66,7 +86,8 @@ public class WebSocketNotificationService implements NotificationService {
     @Async
     public void sendNotification(NotificationReceivedEvent event) {
         log.debug("Notification received: {}", event.getNotification().getId());
-        String message = notificationMessageResolver.getMessage(event.getNotification());
+        String message = notificationMessageResolver.getMessage(
+                event.getNotification().getType().getValue().toLowerCase(), event.getNotification().getSender());
         log.info(message);
         NotificationResponseDto response = notificationMapping.toNotificationResponseDto(
                 event.getNotification(), message);

@@ -7,6 +7,8 @@ import ru.danilgordienko.notification_service.model.dto.response.NotificationLis
 import ru.danilgordienko.notification_service.model.dto.response.NotificationResponseDto;
 import ru.danilgordienko.notification_service.model.dto.response.NotificationsInfoDto;
 import ru.danilgordienko.notification_service.model.entity.Notification;
+import ru.danilgordienko.notification_service.service.NotificationMessageResolver;
+import ru.danilgordienko.notification_service.service.impl.FileNotificationMessageResolver;
 
 import java.util.List;
 

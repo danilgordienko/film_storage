@@ -9,4 +9,5 @@ public interface NotificationService {
     void acceptNotification(NotificationRequestDto notification);
     NotificationListResponseDto getAllNotifications(Long id);
     NotificationsInfoDto getNotificationsInfo(Long id);
+    void markNotificationsAsRead(Long id);
 }

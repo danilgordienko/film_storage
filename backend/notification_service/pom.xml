@@ -72,6 +72,15 @@
 			<artifactId>mapstruct</artifactId>
 			<version>1.6.2</version>
 		</dependency>
+		<dependency>
+			<groupId>net.logstash.logback</groupId>
+			<artifactId>logstash-logback-encoder</artifactId>
+			<version>7.4</version>
+		</dependency>
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -91,7 +100,9 @@
 							<version>1.6.2</version>
 						</path>
 					</annotationProcessorPaths>
-				</configuration>
+                    <source>6</source>
+                    <target>6</target>
+                </configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
