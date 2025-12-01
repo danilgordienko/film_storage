@@ -6,6 +6,7 @@ const MovieDetails = () => {
   const { id } = useParams();
   const [movie, setMovie] = useState(null);
   const [rating, setRating] = useState(1);
+  const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -122,51 +123,67 @@ const MovieDetails = () => {
       <hr />
 
       <section className="movie-ratings">
-        <h3>Оценки и отзывы</h3>
-        {movie.ratings.length === 0 ? (
-          <p>Отзывов пока нет</p>
-        ) : (
-          <div className="ratings-list">
-            {movie.ratings.map((r, idx) => (
-              <div key={idx} className="rating-card">
-                <div className="rating-header">
-                  <strong>{r.username}</strong> <span className="rating-score">{r.rating}/10</span>
-                </div>
-                <p className="rating-comment">{r.comment}</p>
-                <small className="rating-date">{new Date(r.createdAt).toLocaleString()}</small>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <hr />
-
-      <section className="rating-form-section">
         <h3>Оставить отзыв</h3>
         <form onSubmit={handleSubmit} className="rating-form">
           <label>
             Рейтинг:
-            <select value={rating} onChange={(e) => setRating(parseInt(e.target.value))}>
-              {Array.from({ length: 10 }, (_, i) => i + 1).map(num => (
-                <option key={num} value={num}>{num}</option>
-              ))}
-            </select>
+            <div className="rating-stars">
+              {Array.from({ length: 10 }, (_, i) => {
+                const starNum = i + 1;
+                const isFilled = starNum <= (hoverRating || rating);
+
+                return (
+                    <span
+                        key={starNum}
+                        className={`star ${isFilled ? 'filled' : ''}`}
+                        onClick={() => setRating(starNum)}
+                        onMouseEnter={() => setHoverRating(starNum)}
+                        onMouseLeave={() => setHoverRating(0)}
+                        title={`${starNum} из 10`}
+                    >
+        ★
+      </span>
+                );
+              })}
+            </div>
+
+
           </label>
+
           <label>
             Комментарий:
             <textarea
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              rows="3"
-              required
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                rows="3"
+                required
             />
           </label>
+
           <button type="submit" disabled={loading}>
             {loading ? 'Отправка...' : 'Оставить отзыв'}
           </button>
         </form>
+
+        <h3>Отзывы</h3>
+        {movie.ratings.length === 0 ? (
+            <p>Отзывов пока нет</p>
+        ) : (
+            <div className="ratings-list">
+              {movie.ratings.map((r, idx) => (
+                  <div key={idx} className="rating-card">
+                    <div className="rating-header">
+                      <strong>{r.username}</strong>
+                      <span className="rating-score">{'★'.repeat(r.rating)}{'☆'.repeat(10 - r.rating)}</span>
+                    </div>
+                    <p className="rating-comment">{r.comment}</p>
+                    <small className="rating-date">{new Date(r.createdAt).toLocaleString()}</small>
+                  </div>
+              ))}
+            </div>
+        )}
       </section>
+
     </div>
   );
 };

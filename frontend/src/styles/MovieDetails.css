@@ -28,67 +28,43 @@
   margin-bottom: 10px;
 }
 
+/* Секция отзывов */
 .movie-ratings {
-  margin-top: 20px;
-}
-
-.ratings-list {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.rating-card {
-  border: 1px solid #ccc;
-  padding: 10px 15px;
-  border-radius: 6px;
-  background-color: #fafafa;
-}
-
-.rating-header {
-  display: flex;
-  justify-content: space-between;
-  font-weight: 600;
-  margin-bottom: 5px;
-}
-
-.rating-score {
-  color: #ff9900;
-}
-
-.rating-comment {
-  margin: 8px 0;
-}
-
-.rating-date {
-  font-size: 0.8rem;
-  color: #666;
-}
-
-.rating-form-section {
   margin-top: 30px;
+}
+
+/* Форма рейтинга */
+.rating-form {
+  margin-bottom: 20px;
+  padding: 12px;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .rating-form label {
   display: block;
-  margin-bottom: 15px;
+  margin-bottom: 12px;
   font-weight: 500;
+  color: #222;
 }
 
-.rating-form select,
 .rating-form textarea {
   width: 100%;
-  padding: 8px;
-  margin-top: 5px;
-  border-radius: 4px;
+  padding: 8px 10px;
+  margin-top: 4px;
+  border-radius: 6px;
   border: 1px solid #ccc;
   font-size: 1rem;
   font-family: inherit;
   resize: vertical;
+  box-sizing: border-box; /* чтобы не вылезало */
 }
 
 .rating-form button {
-  padding: 10px 20px;
+  margin-top: 10px;
+  padding: 10px 18px;
   font-size: 1rem;
   border: none;
   background-color: #007bff;
@@ -98,11 +74,73 @@
   transition: background-color 0.2s ease-in-out;
 }
 
+.rating-form button:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
 .rating-form button:disabled {
   background-color: #999;
   cursor: default;
 }
 
-.rating-form button:hover:not(:disabled) {
-  background-color: #0056b3;
+.rating-stars {
+  display: inline-block;
+}
+
+.rating-stars .star {
+  font-size: 22px;
+  color: #ccc;
+  cursor: pointer;
+  margin-right: 2px;
+  transition: color 0.2s;
+}
+
+.rating-stars .star.filled {
+  color: #ff9900;
+}
+
+.rating-stars .star:hover {
+  color: #ffcc66; /* светлая подсветка при наведении */
+}
+
+
+
+/* Список отзывов */
+.ratings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rating-card {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  border: 1px solid #e0e0e0;
+}
+
+.rating-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.rating-score {
+  font-weight: 700;
+  color: #ff9900;
+}
+
+.rating-comment {
+  margin: 6px 0;
+  color: #333;
+}
+
+.rating-date {
+  font-size: 0.8rem;
+  color: #555;
 }

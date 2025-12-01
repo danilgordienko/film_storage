@@ -62,7 +62,6 @@ const Recommendations = () => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // 1. Рекомендации
         const endpoint = activeTab === 'received' ? 'received' : 'sent';
         const res = await authFetch(`http://localhost:8081/api/recommendations/${endpoint}`);
 
@@ -72,19 +71,18 @@ const Recommendations = () => {
 
         if (!recommendationsData.length) return;
 
-        // 2. Уникальные ID
         const movieIds = [...new Set(recommendationsData.map(r => r.movieId))];
         const userIds = [...new Set([
           ...recommendationsData.map(r => r.senderId),
           ...recommendationsData.map(r => r.receiverId),
         ])];
 
-        // 3. Фильмы
+        // Фильмы
         const moviesRes = await Promise.all(movieIds.map(id =>
-          authFetch(`http://localhost:8081/api/movies/${id}`).then(async res => {
-            if (!res.ok) return null;
-            return res.json();
-          })
+            authFetch(`http://localhost:8081/api/movies/${id}/info`).then(async res => {
+              if (!res.ok) return null;
+              return res.json();
+            })
         ));
         const moviesMap = {};
         moviesRes.forEach(movie => {
@@ -92,12 +90,12 @@ const Recommendations = () => {
         });
         setMovies(moviesMap);
 
-        // 4. Пользователи
+        // Пользователи
         const usersRes = await Promise.all(userIds.map(id =>
-          authFetch(`http://localhost:8081/api/users/${id}/info`).then(async res => {
-            if (!res.ok) return null;
-            return res.json();
-          })
+            authFetch(`http://localhost:8081/api/users/${id}/info`).then(async res => {
+              if (!res.ok) return null;
+              return res.json();
+            })
         ));
         const usersMap = {};
         usersRes.forEach(user => {
@@ -114,6 +112,7 @@ const Recommendations = () => {
 
     fetchData();
   }, [activeTab]);
+
 
   const cancelRecommendation = async (receiverId, movieId) => {
     try {
