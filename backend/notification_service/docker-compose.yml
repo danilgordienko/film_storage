@@ -35,6 +35,7 @@ services:
       LOGSTASH_PORT: ${LOGSTASH_PORT}
       REDIS_HOST: redis
       REDIS_PORT: ${REDIS_PORT}
+      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
     depends_on:
       - postgres3
     ports:

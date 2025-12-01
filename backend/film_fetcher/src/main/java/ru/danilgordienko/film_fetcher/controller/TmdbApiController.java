@@ -64,4 +64,5 @@ public class TmdbApiController {
                     return ResponseEntity.notFound().build();
                 });
     }
+
 }

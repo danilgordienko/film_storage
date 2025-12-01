@@ -20,8 +20,6 @@ import ru.danilgordienko.film_storage.model.entity.User;
 import ru.danilgordienko.film_storage.security.JWTCore;
 import ru.danilgordienko.film_storage.service.UserService;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;

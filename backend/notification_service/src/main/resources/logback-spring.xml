@@ -3,7 +3,7 @@
     <!-- Настройки конвертера JSON -->
     <include resource="net/logstash/logback/logback-base.xml"/>
 
-    <!-- Настраиваем Appender для RabbitMQ -->
+<!--     Настраиваем Appender для RabbitMQ-->
     <appender name="RABBIT" class="org.springframework.amqp.rabbit.logback.AmqpAppender">
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>INFO</level>

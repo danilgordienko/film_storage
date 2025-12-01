@@ -1,0 +1,15 @@
+version: "3.9"
+
+services:
+  discovery:
+    build:
+      context: .
+    container_name: discovery
+    ports:
+      - "8761:8761"
+    networks:
+      - film_network
+
+networks:
+  film_network:
+    external: true

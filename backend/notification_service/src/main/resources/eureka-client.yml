@@ -1,0 +1,20 @@
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL}
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
+
+
+#spring:
+#  rabbitmq:
+#    addresses: rabbitmq:5672
+#    listener:
+#      simple:
+#        auto-startup: false
+#    publisher-confirm-type: none
+#    publisher-returns: false
+#    requested-heartbeat: 0
